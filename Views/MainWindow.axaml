@@ -1,0 +1,315 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ColorPickerApp.ViewModels"
+        xmlns:controls="using:ColorPickerApp.Controls"
+        xmlns:local="using:ColorPickerApp"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        d:DesignWidth="1120"
+        d:DesignHeight="700"
+        x:Class="ColorPickerApp.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="Color Picker Pro"
+        CanResize="False"
+        Width="920"
+        Height="640"
+        WindowState="Normal"
+        WindowStartupLocation="CenterScreen">
+    <Design.DataContext>
+        <vm:MainWindowViewModel />
+    </Design.DataContext>
+    <Window.Resources>
+        <local:ColorToBrushConverter x:Key="ColorToBrushConverter"/>
+	    <StreamGeometry x:Key="arrow-right-icon">
+		    M886 5104 c-125 -40 -203 -140 -235 -302 -8 -37 -11 -729 -11 -2245
+1 -1790 3 -2203 14 -2254 28 -130 95 -226 191 -273 41 -20 65 -24 135 -24 96
+0 162 17 262 68 104 52 2992 2032 3059 2096 67 65 131 161 156 233 27 78 24
+253 -5 328 -31 78 -76 144 -147 214 -42 43 -477 346 -1484 1035 -783 536
+-1465 1000 -1516 1031 -157 94 -310 128 -419 93z	
+        </StreamGeometry>	
+        <StreamGeometry x:Key="arrow-left-icon">
+		    M0 0 C7.49882457 6.30643197 11.06078873 14.56641577 13.25 23.9375 C13.51023205 25.01535079 13.51023205 25.01535079 13.77572131 26.11497635 C14.35526826 29.56397167 14.39033303 32.93665425 14.38142776 36.42209721 C14.3834804 37.17053244 14.38553303 37.91896767 14.38764787 38.69008276 C14.39331682 41.20608913 14.39186074 43.72204073 14.39044189 46.23805237 C14.3930256 48.05697773 14.39603877 49.87590253 14.3994453 51.69482654 C14.40751808 56.6998609 14.40930503 61.70488091 14.41004276 66.709921 C14.41189285 72.10548165 14.41944001 77.50103484 14.42617798 82.89659119 C14.43976424 94.69837633 14.4457866 106.50015808 14.45018864 118.30194974 C14.4529508 125.67099088 14.45718813 133.04003071 14.46169281 140.40907097 C14.47388631 160.81116052 14.48418517 181.21324902 14.4875679 201.61534214 C14.48778747 202.92133196 14.48800703 204.22732179 14.48823325 205.57288706 C14.48845153 206.88200806 14.48866981 208.19112906 14.4888947 209.53992039 C14.48933817 212.1927106 14.48978473 214.84550081 14.49023438 217.49829102 C14.4904558 218.81416751 14.49067723 220.13004401 14.49090537 221.48579555 C14.49485272 242.80399294 14.51230446 264.12214859 14.5355939 285.44033433 C14.55931098 307.3266321 14.57176993 329.21291272 14.57293582 351.09922355 C14.57385243 363.38782388 14.57960109 375.67637967 14.59775543 387.96496773 C14.61316127 398.43002725 14.61827404 408.89502847 14.61001733 419.36009718 C14.60611245 424.6982399 14.60703262 430.03626521 14.62107468 435.37439346 C14.63382313 440.26555824 14.63260768 445.15651751 14.62048396 450.04768204 C14.61852861 451.81287769 14.62159792 453.57808795 14.63032833 455.3432631 C14.69921584 470.21863736 13.13168415 483.87499355 4 496.25 C-2.39164682 502.49638212 -10.44094371 505.90472246 -19.375 506.25 C-39.1790077 505.68331906 -54.73417216 494.67144128 -70.32666016 483.64306641 C-74.27247304 480.86597102 -78.26280768 478.15467642 -82.25 475.4375 C-83.83355697 474.35449359 -85.41689017 473.27115991 -87 472.1875 C-87.78375 471.65125 -88.5675 471.115 -89.375 470.5625 C-111.9375 455.125 -111.9375 455.125 -134.5 439.6875 C-135.2839917 439.15108887 -136.0679834 438.61467773 -136.87573242 438.06201172 C-138.45664032 436.98032934 -140.03753229 435.89862366 -141.6184082 434.81689453 C-145.6137193 432.08310899 -149.60931967 429.34974798 -153.60546875 426.6171875 C-161.64341346 421.12027047 -169.67643214 415.61640687 -177.69873047 410.09667969 C-185.23173881 404.91528491 -192.77949406 399.75546692 -200.32666016 394.59472656 C-204.30162332 391.87640599 -208.27577548 389.15690031 -212.25 386.4375 C-213.83332934 385.35416083 -215.41666268 384.2708275 -217 383.1875 C-245.5 363.6875 -274 344.1875 -302.5 324.6875 C-303.28439453 324.15084717 -304.06878906 323.61419434 -304.87695312 323.0612793 C-306.4539199 321.98222518 -308.03074377 320.90296219 -309.60742188 319.82348633 C-313.66199312 317.047916 -317.71928546 314.27646007 -321.78125 311.51171875 C-363.79352042 282.89828853 -363.79352042 282.89828853 -369.32421875 260.625 C-371.52182956 246.75384188 -369.34463954 233.30883509 -361.609375 221.45703125 C-353.22721826 210.09885668 -343.41268081 202.65492844 -331.75 194.9375 C-329.77053563 193.61763387 -327.79138496 192.29729718 -325.8125 190.9765625 C-322.67911785 188.8874769 -319.54441799 186.80051338 -316.40551758 184.71972656 C-310.02071198 180.48178585 -303.76502875 176.1248738 -297.5625 171.625 C-292.38465935 167.92654239 -287.05357494 164.45174138 -281.75 160.9375 C-274.26696251 155.97756654 -266.87962025 150.94618223 -259.609375 145.6796875 C-251.1361286 139.60267892 -242.42563714 133.85230609 -233.79443359 128.00341797 C-229.48031807 125.0759083 -225.17632641 122.13375677 -220.875 119.1875 C-220.11485596 118.66696045 -219.35471191 118.1464209 -218.5715332 117.61010742 C-217.05705474 116.57286219 -215.54264973 115.5355097 -214.02832031 114.49804688 C-210.1033119 111.80959277 -206.17654779 109.12370505 -202.25 106.4375 C-200.66665869 105.35417833 -199.08332534 104.27084501 -197.5 103.1875 C-169 83.6875 -169 83.6875 -166.62426758 82.06201172 C-165.04335968 80.98032934 -163.46246771 79.89862366 -161.8815918 78.81689453 C-157.8862807 76.08310899 -153.89068033 73.34974798 -149.89453125 70.6171875 C-142.50744332 65.56537253 -135.12271108 60.51027991 -127.75 55.4375 C-119.56818513 49.80801776 -111.37138513 44.20053709 -103.17333984 38.59472656 C-99.98771261 36.41620171 -96.80258239 34.23695126 -93.61767578 32.05737305 C-92.0395286 30.97766522 -90.46107807 29.89840064 -88.88232422 28.81958008 C-84.8795105 26.08356827 -80.88222946 23.34003574 -76.89453125 20.58203125 C-23.21755945 -16.48952296 -23.21755945 -16.48952296 0 0 Z 
+        </StreamGeometry>	
+    </Window.Resources>
+
+    <Window.Styles>
+        <Style Selector="Button, ToggleButton">
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="Padding" Value="12,8" />
+        </Style>
+        <Style Selector="TextBox">
+		<Setter Property="Background" Value="#2E2E2E"/>
+		<Setter Property="Foreground" Value="#BBBBBB"/>
+		<Setter Property="BorderBrush" Value="#4A4A4A"/>
+		<Setter Property="BorderThickness" Value="1"/>
+		<Setter Property="Padding" Value="5"/>
+	</Style>
+	<Style Selector="TextBox:focus">
+		<Setter Property="Background" Value="#2E2E2E"/>
+		<Setter Property="Foreground" Value="#BBBBBB"/>
+		<Setter Property="BorderBrush" Value="#4A4A4A"/>
+		<Setter Property="BorderThickness" Value="1"/>
+		<Setter Property="Padding" Value="5"/>
+	</Style>
+	<Style Selector="TextBox:pointerover /template/ Border#PART_BorderElement">
+		<Setter Property="Background" Value="#404040" />
+		<Setter Property="BorderBrush" Value="#6A6A6A" />
+	</Style>
+	<Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
+		<Setter Property="Background" Value="#2E2E2E" />
+		<Setter Property="BorderBrush" Value="#6A6A6A" />
+	</Style>
+	<Style Selector="TextBox:disabled">
+		<Setter Property="Foreground" Value="#BBBBBB"/>
+	</Style>
+	<Style Selector="TextBox:disabled /template/ Border#PART_BorderElement">
+		<Setter Property="Background" Value="#515151"/>
+	</Style>
+    <Style Selector="NumericUpDown">
+		<Setter Property="Background" Value="#2E2E2E"/>
+		<Setter Property="Foreground" Value="#BBBBBB"/>
+		<Setter Property="BorderBrush" Value="#4A4A4A"/>
+		<Setter Property="BorderThickness" Value="1"/>
+		<Setter Property="Padding" Value="5"/>
+	</Style>
+
+    <Style Selector="NumericUpDown /template/ ButtonSpinner#PART_Spinner:right /template/ RepeatButton#PART_DecreaseButton /template/ ContentPresenter#PART_ContentPresenter">
+		<Setter Property="CornerRadius" Value="0,3,3,0"/>
+	</Style>
+
+
+        <Style Selector="ComboBox">
+		<Setter Property="Background" Value="#2E2E2E"/>
+		<Setter Property="Foreground" Value="#BBBBBB"/>
+		<Setter Property="BorderBrush" Value="#4A4A4A"/>
+	</Style>
+
+	<Style Selector="ComboBox:pointerover /template/ Border#Background">
+		<Setter Property="Background" Value="#404040" />
+		<Setter Property="BorderBrush" Value="#6A6A6A" />
+	</Style>
+
+	<Style Selector="ComboBoxItem">
+		<Setter Property="Foreground" Value="#BBBBBB" />
+	</Style>
+
+	<Style Selector="ComboBoxItem:selected /template/ ContentPresenter">
+		<Setter Property="Background" Value="#404040" />
+		<Setter Property="Foreground" Value="#BBBBBB" />
+		<Setter Property="BorderBrush" Value="#4A4A4A" />
+	</Style>
+
+	<Style Selector="ComboBoxItem:pointerover /template/ ContentPresenter">
+		<Setter Property="Foreground" Value="LightGray" />
+		<Setter Property="Background" Value="#404040" />
+		<Setter Property="BorderBrush" Value="#6A6A6A" />
+	</Style>
+        <Style Selector="Button.eyeDropper">
+            <Setter Property="Width" Value="34" />
+            <Setter Property="Height" Value="34" />
+            <Setter Property="Padding" Value="6" />
+            <Setter Property="CornerRadius" Value="8" />
+        </Style>
+        <Style Selector="Button.previewCopy">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="BorderBrush" Value="#33FFFFFF" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="CornerRadius" Value="12" />
+        </Style>
+        <Style Selector="Button.previewCopy:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="BorderBrush" Value="#77FFFFFF" />
+        </Style>
+        <Style Selector="Button.previewCopy:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="BorderBrush" Value="#FFFFFF" />
+        </Style>
+
+        <Style Selector="Button.swatcherButton">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="CornerRadius" Value="6" />
+        </Style>
+        <Style Selector="Button.swatcherButton:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="BorderBrush" Value="#77FFFFFF" />
+        </Style>
+        <Style Selector="Button.swatcherButton:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="BorderBrush" Value="#FFFFFF" />
+        </Style>
+
+        <Style Selector="Border.panel">
+            <Setter Property="CornerRadius" Value="16" />
+            <Setter Property="Padding" Value="16" />
+            <Setter Property="Background" Value="#1AFFFFFF" />
+            <Setter Property="BorderBrush" Value="#30FFFFFF" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+
+        <Style Selector="ToggleButton">
+            <Setter Property="CornerRadius" Value="0, 0, 10, 10" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="#30FFFFFF" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style Selector="ToggleButton:checked /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
+        <Style Selector="ToggleButton:disabled /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
+
+    </Window.Styles>
+
+    <DockPanel Margin="18" LastChildFill="True">
+        <Border Classes="panel" DockPanel.Dock="Bottom" Margin="0,14,0,0">
+            <Grid ColumnDefinitions="2*,Auto,Auto,Auto" ColumnSpacing="12" MinHeight="64">
+                <Button Grid.Column="0"
+                        Classes="previewCopy"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        Click="OnCopyClick">
+                    <Border CornerRadius="12" ClipToBounds="True">
+                        <Grid>
+                            <controls:CheckerboardControl CellSize="12" />
+                            <Border Background="{Binding SelectedBrush}" CornerRadius="12" />
+                            <Label x:Name="lableContent" 
+                                   Content="Скопированно" 
+                                   HorizontalAlignment="Center" 
+                                   VerticalAlignment="Center"
+                                   FontSize="25" 
+                                   FontWeight="500"
+                                   IsVisible="False"
+                                   Foreground="{Binding SelectedColor, Converter={StaticResource ColorToBrushConverter}}"/>
+                        </Grid>
+                    </Border>
+                </Button>
+                <ComboBox Grid.Column="1"
+                          Name="CopyFormatBox"
+                          Width="130"
+                          VerticalAlignment="Center"
+                          SelectedIndex="{Binding CopyFormatIndex}"
+                          SelectionChanged="OnCopyFormatChanged">
+                    <ComboBoxItem Content="rgb" />
+                    <ComboBoxItem Content="hsv" />
+                    <ComboBoxItem Content="normal" />
+                    <ComboBoxItem Content="hex" />
+                </ComboBox>
+                <ToggleSwitch Grid.Column="2"
+                              IsChecked="{Binding CopyWithAlpha}"
+                              VerticalAlignment="Center"
+                              OnContent=""
+                              OffContent=""
+                              Content="С alpha" />
+                <TextBox Grid.Column="3"
+                         Width="290"
+                         VerticalAlignment="Center"
+                         IsReadOnly="True"
+                         Name="CopyValueBox" />
+            </Grid>
+        </Border>
+
+        <Grid ColumnDefinitions="412,1.4*" ColumnSpacing="16">
+            <Border Classes="panel" Grid.Column="0">
+                <DockPanel LastChildFill="True">
+                    <Grid Margin="-12" DockPanel.Dock="Top" ColumnDefinitions="auto,*,auto">
+                        <Button Content="1" Grid.Column="0" Click="ButtonBackColorMode_OnClick">
+						    <PathIcon Data="{StaticResource arrow-left-icon}" Foreground="LightGray" Width="14" Height="14"/>		
+                        </Button>
+                        <Label Name="ColorModeLabel" Content="Моно" VerticalAlignment="Center" HorizontalAlignment="Center" Grid.Column="1"/>
+                        <Button Content="2" Grid.Column="2" Click="ButtonNextColorMode_OnClick">
+						    <PathIcon Data="{StaticResource arrow-right-icon}" Foreground="LightGray" Width="14" Height="14"/>	
+                        </Button>
+                    </Grid>
+                    <Grid DockPanel.Dock="Bottom" ColumnDefinitions="320,Auto" ColumnSpacing="10" Margin="0,0,0,0">
+                        <StackPanel>
+                            <WrapPanel Grid.Column="0" Name="SwatchesPanel" />
+                            <WrapPanel Grid.Column="0" ItemsAlignment="Center" Width="320" Height="25">
+						        <ItemsControl ItemsSource="{Binding AdditionalColors}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                </ItemsControl>		
+                            </WrapPanel>
+                        </StackPanel>
+                        <Button Grid.Column="1"
+                                Classes="eyeDropper"
+                                VerticalAlignment="Top"
+                                Click="OnEyedropperClick"
+                                HorizontalAlignment="Left"
+                                Margin="-3, 0, 0, 0"
+                                Width="56" Height="56">
+                            <Image Source="/Assets/color-picker.png" Stretch="Uniform" Width="30" Height="30" />
+                        </Button>
+                    </Grid>
+                    <Grid ColumnDefinitions="Auto,24" ColumnSpacing="10">
+                        <controls:ColorWheelSvControl Name="Wheel"
+                                                      Width="320"
+                                                      Height="320"
+                                                      HorizontalAlignment="Center"
+                                                      VerticalAlignment="Center"
+                                                      Hue="{Binding Hue, Mode=TwoWay}"
+                                                      Saturation="{Binding Saturation, Mode=TwoWay}"
+                                                      Value="{Binding Value, Mode=TwoWay}" />
+                        <controls:AlphaSliderControl Grid.Column="1"
+                                                     Height="320"
+                                                     Width="26"
+                                                     HorizontalAlignment="Stretch"
+                                                     VerticalAlignment="Center"
+                                                     BaseColor="{Binding OpaqueColor}"
+                                                     Alpha="{Binding Alpha, Mode=TwoWay}" />
+                    </Grid>
+                </DockPanel>
+            </Border>
+
+            <Border Classes="panel" Grid.Column="1">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Spacing="14">
+                        <TextBlock Text="RGB" FontWeight="SemiBold" />
+                        <Grid ColumnDefinitions="24,*,24,*" RowDefinitions="Auto,Auto" RowSpacing="2">
+                            <TextBlock Text="R" VerticalAlignment="Center" />
+                            <NumericUpDown Grid.Column="1" Minimum="0" Maximum="255" FormatString="F0" Value="{Binding R, Mode=TwoWay}" />
+                            <TextBlock Grid.Column="2" Text="A" Margin="12,0,0,0" VerticalAlignment="Center" />
+                            <NumericUpDown Grid.Column="3" Minimum="0" Maximum="1" Increment="0.01" FormatString="F2" Value="{Binding Alpha, Mode=TwoWay}" />
+                            <TextBlock Grid.Row="1" Text="G" VerticalAlignment="Center" />
+                            <NumericUpDown Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="255" FormatString="F0" Value="{Binding G, Mode=TwoWay}" />
+                            <TextBlock Grid.Row="1" Grid.Column="2" Text="B" Margin="12,0,0,0" VerticalAlignment="Center" />
+                            <NumericUpDown Grid.Row="1" Grid.Column="3" Minimum="0" Maximum="255" FormatString="F0" Value="{Binding B, Mode=TwoWay}" />
+                        </Grid>
+
+                        <TextBlock Text="HSV" FontWeight="SemiBold" />
+                        <Grid ColumnDefinitions="24,*,24,*" RowDefinitions="Auto,Auto" RowSpacing="2">
+                            <TextBlock Text="H" VerticalAlignment="Center" />
+                            <NumericUpDown Grid.Column="1" Minimum="0" Maximum="360" Increment="1" FormatString="F2" Value="{Binding Hue, Mode=TwoWay}" />
+                            <TextBlock Grid.Column="2" Text="A" Margin="12,0,0,0" VerticalAlignment="Center" />
+                            <NumericUpDown Grid.Column="3" Minimum="0" Maximum="1" Increment="0.01" FormatString="F2" Value="{Binding Alpha, Mode=TwoWay}" />
+                            <TextBlock Grid.Row="1" Text="S" VerticalAlignment="Center" />
+                            <NumericUpDown Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="1" Increment="0.01" FormatString="F2" Value="{Binding Saturation, Mode=TwoWay}" />
+                            <TextBlock Grid.Row="1" Grid.Column="2" Text="V" Margin="12,0,0,0" VerticalAlignment="Center" />
+                            <NumericUpDown Grid.Row="1" Grid.Column="3" Minimum="0" Maximum="1" Increment="0.01" FormatString="F2" Value="{Binding Value, Mode=TwoWay}" />
+                        </Grid>
+
+                        <TextBlock Text="Normal (0..1)" FontWeight="SemiBold" />
+                        <Grid ColumnDefinitions="24,*,24,*" RowDefinitions="Auto,Auto" RowSpacing="2">
+                            <TextBlock Text="R" VerticalAlignment="Center" />
+                            <NumericUpDown Grid.Column="1" Minimum="0" Maximum="1" Increment="0.01" FormatString="F2" Value="{Binding NormalR, Mode=TwoWay}" />
+                            <TextBlock Grid.Column="2" Text="A" Margin="12,0,0,0" VerticalAlignment="Center" />
+                            <NumericUpDown Grid.Column="3" Minimum="0" Maximum="1" Increment="0.01" FormatString="F2" Value="{Binding Alpha, Mode=TwoWay}" />
+                            <TextBlock Grid.Row="1" Text="G" VerticalAlignment="Center" />
+                            <NumericUpDown Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="1" Increment="0.01" FormatString="F2" Value="{Binding NormalG, Mode=TwoWay}" />
+                            <TextBlock Grid.Row="1" Grid.Column="2" Text="B" Margin="12,0,0,0" VerticalAlignment="Center" />
+                            <NumericUpDown Grid.Row="1" Grid.Column="3" Minimum="0" Maximum="1" Increment="0.01" FormatString="F2" Value="{Binding NormalB, Mode=TwoWay}" />
+                        </Grid>
+
+                        <TextBlock Text="Hex" FontWeight="SemiBold" />
+                        <TextBox Text="{Binding Hex, Mode=TwoWay}" Watermark="#rrggbb" />
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+    </DockPanel>
+</Window>

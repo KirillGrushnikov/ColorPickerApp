@@ -1,0 +1,7 @@
+# Папки с результатами компиляции
+/bin/
+/obj/
+/packages/
+/out/
+/publish/
+/installer/Output/
