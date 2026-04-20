@@ -7,6 +7,7 @@ using ColorPickerApp.Views;
 using ReactiveUI;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Reactive.Linq;
 
@@ -21,6 +22,27 @@ namespace ColorPickerApp.ViewModels
 
     public class SettingsViewModel : ViewModelBase
     {
+
+        private bool _autoStart = true;
+        public bool IsAutoStart
+        {
+            get => _autoStart;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _autoStart, value);
+                App.Settings.IsAutoStart = value;
+                if (value)
+                {
+                    PermanentCloseWindow = false;
+                    StartupManager.AddToStartupViaShortcut();
+                }
+                else
+                    StartupManager.RemoveFromStartupViaShortcut();
+
+                App.Settings.Save();
+            }
+        }
+
         private bool _permanentCloseWindow = true;
         public bool PermanentCloseWindow
         {
@@ -126,6 +148,7 @@ namespace ColorPickerApp.ViewModels
         public SettingsViewModel()
         {
             ResetCommand = ReactiveCommand.Create(ResetToDefaults);
+            _autoStart = App.Settings.IsAutoStart;
             IsCustomColorSelected = BackgroundType == TransparentBackgroundType.CustomColor;
             PermanentCloseWindow = App.Settings.PermanentCloseWindow;
             AutoCopyOnPick = App.Settings.AutoCopyOnPick;
@@ -174,6 +197,7 @@ namespace ColorPickerApp.ViewModels
 
         private void ResetToDefaults()
         {
+            IsAutoStart = false;
             PermanentCloseWindow = false;
             AutoCopyOnPick = false;
             PickerHotkey = "Ctrl+Shift+P";

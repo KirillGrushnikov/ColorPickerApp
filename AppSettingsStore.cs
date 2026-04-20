@@ -13,6 +13,7 @@ public sealed class AppSettingsStore : ReactiveObject
 {
     private const string SettingsFileName = "settings.json";
 
+    public bool IsAutoStart { get; set; } = false;
     public bool IsCopyWithAlpha { get; set; } = true;
     public bool IsCopyWithFunction { get; set; } = true;
     public List<string> SavedSwatches { get; set; } = new();

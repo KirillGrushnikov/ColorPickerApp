@@ -17,8 +17,12 @@
                 Command="{Binding ResetCommand}"/>
 
         <Separator/>
+
+        <CheckBox Content="Запускать вместе с Windows"
+                  IsChecked="{Binding IsAutoStart}"/>
+
         <CheckBox Content="Сворачивать в трей"
-                  IsChecked="{Binding !PermanentCloseWindow}"/>
+                  IsChecked="{Binding !PermanentCloseWindow}" IsEnabled="{Binding !IsAutoStart}"/>
 
         <CheckBox Content="Автоматически копировать цвет в буфер обмена при выборе через пипетку"
                   IsChecked="{Binding AutoCopyOnPick}"/>

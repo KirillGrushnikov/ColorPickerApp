@@ -28,6 +28,13 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         DataContextChanged += OnDataContextChanged;
+        if (StartupHelper.IsAutoStartMode)
+        {
+            ShowInTaskbar = false;
+            WindowState = WindowState.Minimized;
+            Hide();
+        }
+
         Opened += (_, _) =>
         {
             latticeToggleButton.IsChecked = App.Settings.IsCopyWithFunction;
@@ -62,6 +69,7 @@ public partial class MainWindow : Window
         base.OnClosed(e);
         var hotkeyService = App.ServiceProvider.GetRequiredService<GlobalHotkeyService>();
         hotkeyService.Stop();
+        
     }
 
     protected override void OnClosing(WindowClosingEventArgs e)
@@ -70,8 +78,7 @@ public partial class MainWindow : Window
         e.Cancel = !App.Settings.PermanentCloseWindow && !_closeInTray;
         if (!_closeInTray)
         {
-            WindowState = WindowState.Minimized;
-            ShowInTaskbar = false;
+            Hide();
         }
     }
 
