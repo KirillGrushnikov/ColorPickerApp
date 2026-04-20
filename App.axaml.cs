@@ -15,10 +15,10 @@ public partial class App : Application
     {
         AvaloniaXamlLoader.Load(this);
 #if DEBUG
-        this.AttachDeveloperTools(o =>
-        {
-            o.ConnectOnStartup = true;
-        });
+        //this.AttachDeveloperTools(o =>
+        //{
+        //    o.ConnectOnStartup = true;
+        //});
 #endif
 
         Settings = AppSettingsStore.Load();

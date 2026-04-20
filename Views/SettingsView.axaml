@@ -1,0 +1,79 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:ColorPickerApp.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="ColorPickerApp.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+    <UserControl.DataContext>
+        <vm:SettingsViewModel/>
+    </UserControl.DataContext>
+
+    <StackPanel Margin="20" Spacing="15">
+        
+        <Button Content="Сбросить все настройки по умолчанию"
+                HorizontalAlignment="Left"
+                Command="{Binding ResetCommand}"/>
+
+        <Separator/>
+
+        <CheckBox Content="Автоматически копировать цвет в буфер обмена при выборе через пипетку"
+                  IsChecked="{Binding AutoCopyOnPick}"/>
+
+        <CheckBox Content="Разворачивать главное окно после закрытия пипетки"
+                  IsChecked="{Binding RestoreWindowAfterPick}"/>
+        
+        <StackPanel Orientation="Horizontal" Spacing="10">
+            <TextBlock Text="Горячая клавиша вызова пипетки:" VerticalAlignment="Center"/>
+            <TextBox x:Name="HotkeyTextBox"
+                     Text="{Binding PickerHotkey}"
+                     IsReadOnly="True"
+                     Width="150"
+                     VerticalAlignment="Center"/>
+            <TextBlock Text="(нажмите любую комбинацию)" FontSize="11" Foreground="Gray" VerticalAlignment="Center"/>
+        </StackPanel>
+
+        <StackPanel Spacing="8">
+            <TextBlock Text="Фон для отображения прозрачных областей:" FontWeight="Bold"/>
+            <StackPanel Orientation="Horizontal" Spacing="20">
+                <ComboBox Width="275"
+                          HorizontalContentAlignment="Left"
+                          SelectedIndex="{Binding BackgroundTypeIndex}">
+                    <ComboBoxItem>
+					    <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Border BorderBrush="Gray" BorderThickness="1">
+						        <Grid ColumnDefinitions="6,6,6" RowDefinitions="6,6,6" HorizontalAlignment="Left">
+								    <Border Grid.Column="0" Grid.Row="0" Background="White"/> <Border Grid.Column="1" Grid.Row="0" Background="#c1c1c1"/> <Border Grid.Column="2" Grid.Row="0" Background="White"/>
+								    <Border Grid.Column="0" Grid.Row="1" Background="#c1c1c1"/> <Border Grid.Column="1" Grid.Row="1" Background="White"/> <Border Grid.Column="2" Grid.Row="1" Background="#c1c1c1"/>
+								    <Border Grid.Column="0" Grid.Row="2" Background="White"/> <Border Grid.Column="1" Grid.Row="2" Background="#c1c1c1"/> <Border Grid.Column="2" Grid.Row="2" Background="White"/>
+                                </Grid>
+                            </Border>
+                            <Label Content="Светный шахматный"/>
+                        </StackPanel>
+                    </ComboBoxItem>
+                    <ComboBoxItem>
+					    <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Border BorderBrush="Gray" BorderThickness="1">
+						        <Grid ColumnDefinitions="6,6,6" RowDefinitions="6,6,6" HorizontalAlignment="Left">
+								    <Border Grid.Column="0" Grid.Row="0" Background="#2b2b2b"/> <Border Grid.Column="1" Grid.Row="0" Background="#333333"/> <Border Grid.Column="2" Grid.Row="0" Background="#2b2b2b"/>
+								    <Border Grid.Column="0" Grid.Row="1" Background="#333333"/> <Border Grid.Column="1" Grid.Row="1" Background="#2b2b2b"/> <Border Grid.Column="2" Grid.Row="1" Background="#333333"/>
+								    <Border Grid.Column="0" Grid.Row="2" Background="#2b2b2b"/> <Border Grid.Column="1" Grid.Row="2" Background="#333333"/> <Border Grid.Column="2" Grid.Row="2" Background="#2b2b2b"/>
+                                </Grid>
+                            </Border>
+                            <Label Content="Тёмный шахматный"/>
+                        </StackPanel>
+                    </ComboBoxItem>
+                    <ComboBoxItem>
+					    <StackPanel Orientation="Horizontal">
+                            <Label Content="Сплошной пользовательский"/>
+                        </StackPanel>
+                    </ComboBoxItem>
+                </ComboBox>
+
+                <ColorPicker IsVisible="{Binding IsCustomColorSelected}" Color="{Binding CustomBackgroundColor}"
+                             HorizontalAlignment="Left"/>
+            </StackPanel>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

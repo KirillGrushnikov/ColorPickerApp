@@ -1,8 +1,10 @@
 using Avalonia;
+using Avalonia.Animation;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.Styling;
 using Avalonia.Threading;
 using ColorPickerApp.Controls;
 using ColorPickerApp.ViewModels;
@@ -415,4 +417,107 @@ public partial class MainWindow : Window
         if (panel is not null)
             UpdateSwatchVisual(panel, index);
     }
+
+    #region SplitView
+    Point mousePos;
+
+    protected override void OnPointerMoved(PointerEventArgs e)
+    {
+
+        mousePos = e.GetPosition(this);
+        if (!SplitViewControl.IsPaneOpen)
+        {
+            CheckMouse();
+        }
+        else
+            SplitViewControl.Margin = new Thickness(0, 0, 0, 0);
+
+        base.OnPointerMoved(e);
+    }
+
+    private void CheckMouse()
+    {
+        Console.WriteLine(mousePos.X);
+        if (mousePos.X >= 0 && mousePos.X < 20)
+            ShowSplitView();
+        else
+            HideSplitView();
+    }
+
+    private bool splitViewIsHide = true;
+    private bool splitViewAnimationRunning = false;
+    private async void ShowSplitView()
+    {
+        if (!splitViewIsHide || splitViewAnimationRunning) return;
+
+        var animation = new Animation
+        {
+            Duration = TimeSpan.FromMilliseconds(200),
+            FillMode = FillMode.Forward,
+            Children =
+            {
+                new KeyFrame
+                {
+                    Cue = new Cue(0.0),
+                    Setters =
+                    {
+                        new Setter(Control.MarginProperty, new Thickness(-20, 0, 0, 0))
+                    }
+                },
+                new KeyFrame
+                {
+                    Cue = new Cue(1.0),
+                    Setters =
+                    {
+                        new Setter(Control.MarginProperty, new Thickness(0))
+                    }
+                }
+            }
+        };
+
+        splitViewAnimationRunning = true;
+        await animation.RunAsync(SplitViewControl);
+        splitViewAnimationRunning = false;
+        splitViewIsHide = false;
+        CheckMouse();
+    }
+
+    public async void HideSplitView()
+    {
+        if (splitViewIsHide || splitViewAnimationRunning) return;
+
+        var animation = new Animation
+        {
+            Duration = TimeSpan.FromMilliseconds(200),
+            FillMode = FillMode.Forward,
+            Children =
+            {
+                new KeyFrame
+                {
+                    Cue = new Cue(0.0),
+                    Setters =
+                    {
+                        new Setter(Control.MarginProperty, new Thickness(0))
+                    }
+                },
+                new KeyFrame
+                {
+                    Cue = new Cue(1.0),
+                    Setters =
+                    {
+                        new Setter(Control.MarginProperty, new Thickness(-20, 0, 0, 0))
+                    }
+                }
+            }
+        };
+
+        splitViewAnimationRunning = true;
+        await animation.RunAsync(SplitViewControl);
+        splitViewAnimationRunning = false;
+        splitViewIsHide = true;
+        CheckMouse();
+    }
+
+
+    #endregion
 }
