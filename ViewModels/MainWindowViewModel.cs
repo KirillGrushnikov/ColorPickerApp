@@ -184,11 +184,11 @@ public class MainWindowViewModel : ViewModelBase
         return CopyFormat switch
         {
             "hsv" => CopyWithAlpha
-                ? $"{Hue:F0}, {(Saturation * 100):F0}%, {(Value * 100):F0}%, {Alpha:F2}"
-                : $"{Hue:F0}, {(Saturation * 100):F0}%, {(Value * 100):F0}%",
+                ? $"hsva({Hue:F0}, {(Saturation * 100):F0}%, {(Value * 100):F0}%, {Alpha:F2})"
+                : $"hsv({Hue:F0}, {(Saturation * 100):F0}%, {(Value * 100):F0}%)",
             "normal" => CopyWithAlpha
-                ? $"{NormalR:F2}, {NormalG:F2}, {NormalB:F2}, {Alpha:F2}"
-                : $"{NormalR:F2}, {NormalG:F2}, {NormalB:F2}",
+                ? $"({NormalR:F2}, {NormalG:F2}, {NormalB:F2}, {Alpha:F2})"
+                : $"({NormalR:F2}, {NormalG:F2}, {NormalB:F2})",
             "hex" => CopyWithAlpha
                 ? $"#{(int)Math.Round(Alpha * 255):x2}{R:x2}{G:x2}{B:x2}"
                 : $"#{R:x2}{G:x2}{B:x2}",

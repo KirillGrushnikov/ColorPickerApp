@@ -26,6 +26,7 @@ public partial class MainWindow : Window
         DataContextChanged += OnDataContextChanged;
         Opened += (_, _) =>
         {
+            latticeToggleButton.IsChecked = App.Settings.IsCopyWithFunction;
             EnsureSwatchesStorage();
             BuildSwatches();
         };
@@ -75,8 +76,11 @@ public partial class MainWindow : Window
         if (Vm is null || Clipboard is null)
             return;
 
-        var text = Vm.GetColorAsText();
-        await Clipboard.SetTextAsync(text);
+        var tb = this.FindControl<TextBox>("CopyValueBox");
+        if (tb is null)
+            return;
+
+        await Clipboard.SetTextAsync(tb.Text);
         RefreshCopyText();
         ChangeTextWithTimer(1000);
     }
@@ -207,6 +211,13 @@ public partial class MainWindow : Window
             return;
         var item = box.SelectedItem as ComboBoxItem;
         Vm.CopyFormat = (item?.Content?.ToString() ?? "rgb").ToLowerInvariant();
+        latticeToggleButton.Content = (Vm.CopyFormat == "hex" ? '#' : 'ƒ');
+        RefreshCopyText();
+    }
+    private void latticeToggleButton_Checked(object? sender, RoutedEventArgs e)
+    {
+        App.Settings.IsCopyWithFunction = latticeToggleButton.IsChecked.Value;
+        App.Settings.Save();
         RefreshCopyText();
     }
 
@@ -217,6 +228,17 @@ public partial class MainWindow : Window
 
         var text = Vm.GetColorAsText();
         var tb = this.FindControl<TextBox>("CopyValueBox");
+        if (!latticeToggleButton.IsChecked.Value)
+        {
+            if (text.Contains('#'))
+                text = text.Replace("#", "");
+
+            int start = text.IndexOf('(') + 1;
+            int end = text.LastIndexOf(')');
+            if(start != -1 && end != -1)
+                text = text.Substring(start, end - start);
+        }
+
         if (tb is not null)
             tb.Text = text;
     }

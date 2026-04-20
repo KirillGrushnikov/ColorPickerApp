@@ -10,6 +10,7 @@ public sealed class AppSettingsStore
     private const string SettingsFileName = "settings.json";
 
     public bool IsCopyWithAlpha { get; set; } = true;
+    public bool IsCopyWithFunction { get; set; } = true;
     public List<string> SavedSwatches { get; set; } = new();
 
     public int CopyFormatIndex { get; set; } = 0;

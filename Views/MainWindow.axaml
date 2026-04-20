@@ -16,7 +16,8 @@
         Width="920"
         Height="640"
         WindowState="Normal"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        RequestedThemeVariant="Dark">
     <Design.DataContext>
         <vm:MainWindowViewModel />
     </Design.DataContext>
@@ -161,11 +162,38 @@
             <Setter Property="BorderThickness" Value="0" />
         </Style>
 
+        <Style Selector="ToggleButton.lattice">
+            <Setter Property="CornerRadius" Value="2" />
+            <Setter Property="Padding" Value="1, 0, 1, 0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style Selector="ToggleButton.lattice:checked /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="BorderBrush" Value="#00FFFFFF" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style Selector="ToggleButton.lattice:unchecked /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="Gray" />
+            <Setter Property="BorderBrush" Value="#00FFFFFF" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style Selector="ToggleButton.lattice:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="BorderBrush" Value="#77FFFFFF" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style Selector="ToggleButton.lattice:pressed /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="BorderBrush" Value="#FFFFFF" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+
     </Window.Styles>
 
     <DockPanel Margin="18" LastChildFill="True">
         <Border Classes="panel" DockPanel.Dock="Bottom" Margin="0,14,0,0">
-            <Grid ColumnDefinitions="2*,Auto,Auto,Auto" ColumnSpacing="12" MinHeight="64">
+            <Grid ColumnDefinitions="342,Auto,Auto,Auto,*" ColumnSpacing="8" MinHeight="64">
                 <Button Grid.Column="0"
                         Classes="previewCopy"
                         HorizontalAlignment="Stretch"
@@ -203,9 +231,23 @@
                               OnContent=""
                               OffContent=""
                               Content="С alpha" />
-                <TextBox Grid.Column="3"
-                         Width="290"
+                <Panel Grid.Column="3">
+                    <ToggleButton 
+                        Name="latticeToggleButton"
+                        Content="ƒ" 
+                        Classes="lattice"
+                        HorizontalContentAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        Width="23"
+                        Height="32"
+                        FontSize="25" 
+                        FontWeight="Bold"
+                        IsCheckedChanged="latticeToggleButton_Checked"/>
+                </Panel>
+                <TextBox Grid.Column="4"
+                         MaxWidth="290"
                          VerticalAlignment="Center"
+                         HorizontalAlignment="Stretch"
                          IsReadOnly="True"
                          Name="CopyValueBox" />
             </Grid>
