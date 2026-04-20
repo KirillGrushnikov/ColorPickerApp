@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:ColorPickerApp.ViewModels"
+        xmlns:v="using:ColorPickerApp.Views"
         xmlns:controls="using:ColorPickerApp.Controls"
         xmlns:local="using:ColorPickerApp"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -17,12 +18,14 @@
         Height="640"
         WindowState="Normal"
         WindowStartupLocation="CenterScreen"
-        RequestedThemeVariant="Dark">
+        RequestedThemeVariant="Dark"
+        x:Name="main">
     <Design.DataContext>
         <vm:MainWindowViewModel />
     </Design.DataContext>
     <Window.Resources>
         <local:ColorToBrushConverter x:Key="ColorToBrushConverter"/>
+        <local:BoolToAngleConverter x:Key="BoolToAngleConverter"/>
 	    <StreamGeometry x:Key="arrow-right-icon">
 		    M886 5104 c-125 -40 -203 -140 -235 -302 -8 -37 -11 -729 -11 -2245
 1 -1790 3 -2203 14 -2254 28 -130 95 -226 191 -273 41 -20 65 -24 135 -24 96
@@ -191,167 +194,228 @@
 
     </Window.Styles>
 
-    <DockPanel Margin="18" LastChildFill="True">
-        <Border Classes="panel" DockPanel.Dock="Bottom" Margin="0,14,0,0">
-            <Grid ColumnDefinitions="342,Auto,Auto,Auto,*" ColumnSpacing="8" MinHeight="64">
-                <Button Grid.Column="0"
-                        Classes="previewCopy"
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Stretch"
-                        Click="OnCopyClick">
-                    <Border CornerRadius="12" ClipToBounds="True">
-                        <Grid>
-                            <controls:CheckerboardControl CellSize="12" />
-                            <Border Background="{Binding SelectedBrush}" CornerRadius="12" />
-                            <Label x:Name="lableContent" 
-                                   Content="Скопированно" 
-                                   HorizontalAlignment="Center" 
-                                   VerticalAlignment="Center"
-                                   FontSize="25" 
-                                   FontWeight="500"
-                                   IsVisible="False"
-                                   Foreground="{Binding SelectedColor, Converter={StaticResource ColorToBrushConverter}}"/>
-                        </Grid>
-                    </Border>
-                </Button>
-                <ComboBox Grid.Column="1"
-                          Name="CopyFormatBox"
-                          Width="130"
-                          VerticalAlignment="Center"
-                          SelectedIndex="{Binding CopyFormatIndex}"
-                          SelectionChanged="OnCopyFormatChanged">
-                    <ComboBoxItem Content="rgb" />
-                    <ComboBoxItem Content="hsv" />
-                    <ComboBoxItem Content="normal" />
-                    <ComboBoxItem Content="hex" />
-                </ComboBox>
-                <ToggleSwitch Grid.Column="2"
-                              IsChecked="{Binding CopyWithAlpha}"
+    <Panel>
+        <DockPanel Margin="18" LastChildFill="True">
+            <Border Classes="panel" DockPanel.Dock="Bottom" Margin="0,14,0,0">
+                <Grid ColumnDefinitions="342,Auto,Auto,Auto,*" ColumnSpacing="8" MinHeight="64">
+                    <Button Grid.Column="0"
+                            Classes="previewCopy"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch"
+                            Click="OnCopyClick">
+                        <Border CornerRadius="12" ClipToBounds="True">
+                            <Grid>
+                                <controls:CheckerboardControl CellSize="12" />
+                                <Border Background="{Binding SelectedBrush}" CornerRadius="12" />
+                                <Label x:Name="lableContent" 
+                                       Content="Скопированно" 
+                                       HorizontalAlignment="Center" 
+                                       VerticalAlignment="Center"
+                                       FontSize="25" 
+                                       FontWeight="500"
+                                       IsVisible="False"
+                                       Foreground="{Binding SelectedColor, Converter={StaticResource ColorToBrushConverter}}"/>
+                            </Grid>
+                        </Border>
+                    </Button>
+                    <ComboBox Grid.Column="1"
+                              Name="CopyFormatBox"
+                              Width="130"
                               VerticalAlignment="Center"
-                              OnContent=""
-                              OffContent=""
-                              Content="С alpha" />
-                <Panel Grid.Column="3">
-                    <ToggleButton 
-                        Name="latticeToggleButton"
-                        Content="ƒ" 
-                        Classes="lattice"
-                        HorizontalContentAlignment="Center"
-                        VerticalContentAlignment="Center"
-                        Width="23"
-                        Height="32"
-                        FontSize="25" 
-                        FontWeight="Bold"
-                        IsCheckedChanged="latticeToggleButton_Checked"/>
-                </Panel>
-                <TextBox Grid.Column="4"
-                         MaxWidth="290"
-                         VerticalAlignment="Center"
-                         HorizontalAlignment="Stretch"
-                         IsReadOnly="True"
-                         Name="CopyValueBox" />
-            </Grid>
-        </Border>
+                              SelectedIndex="{Binding CopyFormatIndex}"
+                              SelectionChanged="OnCopyFormatChanged">
+                        <ComboBoxItem Content="rgb" />
+                        <ComboBoxItem Content="hsv" />
+                        <ComboBoxItem Content="normal" />
+                        <ComboBoxItem Content="hex" />
+                    </ComboBox>
+                    <ToggleSwitch Grid.Column="2"
+                                  IsChecked="{Binding CopyWithAlpha}"
+                                  VerticalAlignment="Center"
+                                  OnContent=""
+                                  OffContent=""
+                                  Content="С alpha" />
+                    <Panel Grid.Column="3">
+                        <ToggleButton 
+                            Name="latticeToggleButton"
+                            Content="ƒ" 
+                            Classes="lattice"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center"
+                            Width="23"
+                            Height="32"
+                            FontSize="25" 
+                            FontWeight="Bold"
+                            IsCheckedChanged="latticeToggleButton_Checked"/>
+                    </Panel>
+                    <TextBox Grid.Column="4"
+                             MaxWidth="290"
+                             VerticalAlignment="Center"
+                             HorizontalAlignment="Stretch"
+                             IsReadOnly="True"
+                             Name="CopyValueBox" />
+                </Grid>
+            </Border>
 
-        <Grid ColumnDefinitions="412,1.4*" ColumnSpacing="16">
-            <Border Classes="panel" Grid.Column="0">
-                <DockPanel LastChildFill="True">
-                    <Grid Margin="-12" DockPanel.Dock="Top" ColumnDefinitions="auto,*,auto">
-                        <Button Content="1" Grid.Column="0" Click="ButtonBackColorMode_OnClick">
-						    <PathIcon Data="{StaticResource arrow-left-icon}" Foreground="LightGray" Width="14" Height="14"/>		
-                        </Button>
-                        <Label Name="ColorModeLabel" Content="Моно" VerticalAlignment="Center" HorizontalAlignment="Center" Grid.Column="1"/>
-                        <Button Content="2" Grid.Column="2" Click="ButtonNextColorMode_OnClick">
-						    <PathIcon Data="{StaticResource arrow-right-icon}" Foreground="LightGray" Width="14" Height="14"/>	
-                        </Button>
-                    </Grid>
-                    <Grid DockPanel.Dock="Bottom" ColumnDefinitions="320,Auto" ColumnSpacing="10" Margin="0,0,0,0">
-                        <StackPanel>
-                            <WrapPanel Grid.Column="0" Name="SwatchesPanel" />
-                            <WrapPanel Grid.Column="0" ItemsAlignment="Center" Width="320" Height="25">
-						        <ItemsControl ItemsSource="{Binding AdditionalColors}">
-                                    <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"/>
-                                        </ItemsPanelTemplate>
-                                    </ItemsControl.ItemsPanel>
-                                </ItemsControl>		
-                            </WrapPanel>
+            <Grid ColumnDefinitions="412,1.4*" ColumnSpacing="16">
+                <Border Classes="panel" Grid.Column="0">
+                    <DockPanel LastChildFill="True">
+                        <Grid Margin="-12" DockPanel.Dock="Top" ColumnDefinitions="auto,*,auto">
+                            <Button Content="1" Grid.Column="0" Click="ButtonBackColorMode_OnClick">
+                                <Button.Content>
+						            <PathIcon Data="{StaticResource arrow-left-icon}" Foreground="LightGray" Width="14" Height="14"/>		
+                                </Button.Content>
+                            </Button>
+                            <Label Name="ColorModeLabel" Content="Моно" VerticalAlignment="Center" HorizontalAlignment="Center" Grid.Column="1"/>
+                            <Button Content="2" Grid.Column="2" Click="ButtonNextColorMode_OnClick">
+                                <Button.Content>		
+						            <PathIcon Data="{StaticResource arrow-right-icon}" Foreground="LightGray" Width="14" Height="14"/>	
+                                </Button.Content>
+                            </Button>
+                        </Grid>
+                        <Grid DockPanel.Dock="Bottom" ColumnDefinitions="320,Auto" ColumnSpacing="10" Margin="0,0,0,0">
+                            <StackPanel>
+                                <WrapPanel Grid.Column="0" Name="SwatchesPanel" />
+                                <WrapPanel Grid.Column="0" ItemsAlignment="Center" Width="320" Height="25">
+						            <ItemsControl ItemsSource="{Binding AdditionalColors}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                    </ItemsControl>		
+                                </WrapPanel>
+                            </StackPanel>
+                            <Button Grid.Column="1"
+                                    Classes="eyeDropper"
+                                    VerticalAlignment="Top"
+                                    Click="OnEyedropperClick"
+                                    HorizontalAlignment="Left"
+                                    Margin="-3, 0, 0, 0"
+                                    Width="56" Height="56">
+                                <Image Source="/Assets/color-picker.png" Stretch="Uniform" Width="30" Height="30" />
+                            </Button>
+                        </Grid>
+                        <Grid ColumnDefinitions="Auto,24" ColumnSpacing="10">
+                            <controls:ColorWheelSvControl Name="Wheel"
+                                                          Width="320"
+                                                          Height="320"
+                                                          HorizontalAlignment="Center"
+                                                          VerticalAlignment="Center"
+                                                          Hue="{Binding Hue, Mode=TwoWay}"
+                                                          Saturation="{Binding Saturation, Mode=TwoWay}"
+                                                          Value="{Binding Value, Mode=TwoWay}" />
+                            <controls:AlphaSliderControl Grid.Column="1"
+                                                         Height="320"
+                                                         Width="26"
+                                                         HorizontalAlignment="Stretch"
+                                                         VerticalAlignment="Center"
+                                                         BaseColor="{Binding OpaqueColor}"
+                                                         Alpha="{Binding Alpha, Mode=TwoWay}" />
+                        </Grid>
+                    </DockPanel>
+                </Border>
+
+                <Border Classes="panel" Grid.Column="1">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Spacing="14">
+                            <TextBlock Text="RGB" FontWeight="SemiBold" />
+                            <Grid ColumnDefinitions="24,*,24,*" RowDefinitions="Auto,Auto" RowSpacing="2">
+                                <TextBlock Text="R" VerticalAlignment="Center" />
+                                <NumericUpDown Grid.Column="1" Minimum="0" Maximum="255" FormatString="F0" Value="{Binding R, Mode=TwoWay}" />
+                                <TextBlock Grid.Column="2" Text="A" Margin="12,0,0,0" VerticalAlignment="Center" />
+                                <NumericUpDown Grid.Column="3" Minimum="0" Maximum="1" Increment="0.01" FormatString="F2" Value="{Binding Alpha, Mode=TwoWay}" />
+                                <TextBlock Grid.Row="1" Text="G" VerticalAlignment="Center" />
+                                <NumericUpDown Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="255" FormatString="F0" Value="{Binding G, Mode=TwoWay}" />
+                                <TextBlock Grid.Row="1" Grid.Column="2" Text="B" Margin="12,0,0,0" VerticalAlignment="Center" />
+                                <NumericUpDown Grid.Row="1" Grid.Column="3" Minimum="0" Maximum="255" FormatString="F0" Value="{Binding B, Mode=TwoWay}" />
+                            </Grid>
+
+                            <TextBlock Text="HSV" FontWeight="SemiBold" />
+                            <Grid ColumnDefinitions="24,*,24,*" RowDefinitions="Auto,Auto" RowSpacing="2">
+                                <TextBlock Text="H" VerticalAlignment="Center" />
+                                <NumericUpDown Grid.Column="1" Minimum="0" Maximum="360" Increment="1" FormatString="F2" Value="{Binding Hue, Mode=TwoWay}" />
+                                <TextBlock Grid.Column="2" Text="A" Margin="12,0,0,0" VerticalAlignment="Center" />
+                                <NumericUpDown Grid.Column="3" Minimum="0" Maximum="1" Increment="0.01" FormatString="F2" Value="{Binding Alpha, Mode=TwoWay}" />
+                                <TextBlock Grid.Row="1" Text="S" VerticalAlignment="Center" />
+                                <NumericUpDown Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="1" Increment="0.01" FormatString="F2" Value="{Binding Saturation, Mode=TwoWay}" />
+                                <TextBlock Grid.Row="1" Grid.Column="2" Text="V" Margin="12,0,0,0" VerticalAlignment="Center" />
+                                <NumericUpDown Grid.Row="1" Grid.Column="3" Minimum="0" Maximum="1" Increment="0.01" FormatString="F2" Value="{Binding Value, Mode=TwoWay}" />
+                            </Grid>
+
+                            <TextBlock Text="Normal (0..1)" FontWeight="SemiBold" />
+                            <Grid ColumnDefinitions="24,*,24,*" RowDefinitions="Auto,Auto" RowSpacing="2">
+                                <TextBlock Text="R" VerticalAlignment="Center" />
+                                <NumericUpDown Grid.Column="1" Minimum="0" Maximum="1" Increment="0.01" FormatString="F2" Value="{Binding NormalR, Mode=TwoWay}" />
+                                <TextBlock Grid.Column="2" Text="A" Margin="12,0,0,0" VerticalAlignment="Center" />
+                                <NumericUpDown Grid.Column="3" Minimum="0" Maximum="1" Increment="0.01" FormatString="F2" Value="{Binding Alpha, Mode=TwoWay}" />
+                                <TextBlock Grid.Row="1" Text="G" VerticalAlignment="Center" />
+                                <NumericUpDown Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="1" Increment="0.01" FormatString="F2" Value="{Binding NormalG, Mode=TwoWay}" />
+                                <TextBlock Grid.Row="1" Grid.Column="2" Text="B" Margin="12,0,0,0" VerticalAlignment="Center" />
+                                <NumericUpDown Grid.Row="1" Grid.Column="3" Minimum="0" Maximum="1" Increment="0.01" FormatString="F2" Value="{Binding NormalB, Mode=TwoWay}" />
+                            </Grid>
+
+                            <TextBlock Text="Hex" FontWeight="SemiBold" />
+                            <TextBox Text="{Binding Hex, Mode=TwoWay}" Watermark="#rrggbb" />
                         </StackPanel>
-                        <Button Grid.Column="1"
-                                Classes="eyeDropper"
-                                VerticalAlignment="Top"
-                                Click="OnEyedropperClick"
-                                HorizontalAlignment="Left"
-                                Margin="-3, 0, 0, 0"
-                                Width="56" Height="56">
-                            <Image Source="/Assets/color-picker.png" Stretch="Uniform" Width="30" Height="30" />
-                        </Button>
-                    </Grid>
-                    <Grid ColumnDefinitions="Auto,24" ColumnSpacing="10">
-                        <controls:ColorWheelSvControl Name="Wheel"
-                                                      Width="320"
-                                                      Height="320"
-                                                      HorizontalAlignment="Center"
-                                                      VerticalAlignment="Center"
-                                                      Hue="{Binding Hue, Mode=TwoWay}"
-                                                      Saturation="{Binding Saturation, Mode=TwoWay}"
-                                                      Value="{Binding Value, Mode=TwoWay}" />
-                        <controls:AlphaSliderControl Grid.Column="1"
-                                                     Height="320"
-                                                     Width="26"
-                                                     HorizontalAlignment="Stretch"
-                                                     VerticalAlignment="Center"
-                                                     BaseColor="{Binding OpaqueColor}"
-                                                     Alpha="{Binding Alpha, Mode=TwoWay}" />
-                    </Grid>
-                </DockPanel>
-            </Border>
-
-            <Border Classes="panel" Grid.Column="1">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel Spacing="14">
-                        <TextBlock Text="RGB" FontWeight="SemiBold" />
-                        <Grid ColumnDefinitions="24,*,24,*" RowDefinitions="Auto,Auto" RowSpacing="2">
-                            <TextBlock Text="R" VerticalAlignment="Center" />
-                            <NumericUpDown Grid.Column="1" Minimum="0" Maximum="255" FormatString="F0" Value="{Binding R, Mode=TwoWay}" />
-                            <TextBlock Grid.Column="2" Text="A" Margin="12,0,0,0" VerticalAlignment="Center" />
-                            <NumericUpDown Grid.Column="3" Minimum="0" Maximum="1" Increment="0.01" FormatString="F2" Value="{Binding Alpha, Mode=TwoWay}" />
-                            <TextBlock Grid.Row="1" Text="G" VerticalAlignment="Center" />
-                            <NumericUpDown Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="255" FormatString="F0" Value="{Binding G, Mode=TwoWay}" />
-                            <TextBlock Grid.Row="1" Grid.Column="2" Text="B" Margin="12,0,0,0" VerticalAlignment="Center" />
-                            <NumericUpDown Grid.Row="1" Grid.Column="3" Minimum="0" Maximum="255" FormatString="F0" Value="{Binding B, Mode=TwoWay}" />
-                        </Grid>
-
-                        <TextBlock Text="HSV" FontWeight="SemiBold" />
-                        <Grid ColumnDefinitions="24,*,24,*" RowDefinitions="Auto,Auto" RowSpacing="2">
-                            <TextBlock Text="H" VerticalAlignment="Center" />
-                            <NumericUpDown Grid.Column="1" Minimum="0" Maximum="360" Increment="1" FormatString="F2" Value="{Binding Hue, Mode=TwoWay}" />
-                            <TextBlock Grid.Column="2" Text="A" Margin="12,0,0,0" VerticalAlignment="Center" />
-                            <NumericUpDown Grid.Column="3" Minimum="0" Maximum="1" Increment="0.01" FormatString="F2" Value="{Binding Alpha, Mode=TwoWay}" />
-                            <TextBlock Grid.Row="1" Text="S" VerticalAlignment="Center" />
-                            <NumericUpDown Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="1" Increment="0.01" FormatString="F2" Value="{Binding Saturation, Mode=TwoWay}" />
-                            <TextBlock Grid.Row="1" Grid.Column="2" Text="V" Margin="12,0,0,0" VerticalAlignment="Center" />
-                            <NumericUpDown Grid.Row="1" Grid.Column="3" Minimum="0" Maximum="1" Increment="0.01" FormatString="F2" Value="{Binding Value, Mode=TwoWay}" />
-                        </Grid>
-
-                        <TextBlock Text="Normal (0..1)" FontWeight="SemiBold" />
-                        <Grid ColumnDefinitions="24,*,24,*" RowDefinitions="Auto,Auto" RowSpacing="2">
-                            <TextBlock Text="R" VerticalAlignment="Center" />
-                            <NumericUpDown Grid.Column="1" Minimum="0" Maximum="1" Increment="0.01" FormatString="F2" Value="{Binding NormalR, Mode=TwoWay}" />
-                            <TextBlock Grid.Column="2" Text="A" Margin="12,0,0,0" VerticalAlignment="Center" />
-                            <NumericUpDown Grid.Column="3" Minimum="0" Maximum="1" Increment="0.01" FormatString="F2" Value="{Binding Alpha, Mode=TwoWay}" />
-                            <TextBlock Grid.Row="1" Text="G" VerticalAlignment="Center" />
-                            <NumericUpDown Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="1" Increment="0.01" FormatString="F2" Value="{Binding NormalG, Mode=TwoWay}" />
-                            <TextBlock Grid.Row="1" Grid.Column="2" Text="B" Margin="12,0,0,0" VerticalAlignment="Center" />
-                            <NumericUpDown Grid.Row="1" Grid.Column="3" Minimum="0" Maximum="1" Increment="0.01" FormatString="F2" Value="{Binding NormalB, Mode=TwoWay}" />
-                        </Grid>
-
-                        <TextBlock Text="Hex" FontWeight="SemiBold" />
-                        <TextBox Text="{Binding Hex, Mode=TwoWay}" Watermark="#rrggbb" />
-                    </StackPanel>
-                </ScrollViewer>
-            </Border>
-        </Grid>
-    </DockPanel>
+                    </ScrollViewer>
+                </Border>
+            </Grid>
+        </DockPanel>
+        <SplitView x:Name="SplitViewControl" 
+            DisplayMode="CompactInline"
+			HorizontalAlignment="Left"
+            OpenPaneLength="{Binding #main.Bounds.Width}"
+			CompactPaneLength="18"
+            PaneBackground="Black"
+            CornerRadius="0, 10, 10, 0"
+            Margin="-20, 0, 0, 0"
+			IsPaneOpen="{Binding #ToggleButtonHide.IsChecked}">
+			<SplitView.Pane>
+				<Grid ColumnDefinitions="*,auto" Background="Transparent">
+                    <Panel Grid.Column="0">
+						<Border Classes="panel" Margin="20, 20, 40, 20">
+							<v:SettingsView  />
+                        </Border>
+                    </Panel>
+                    
+					<ToggleButton 
+                    Grid.Column="1" 
+                    x:Name="ToggleButtonHide" 
+                    Margin="-18, 0, 0, 0" 
+                    Padding="0"
+                    VerticalAlignment="Stretch" 
+                    HorizontalAlignment="Right" 
+                    Width="18" 
+                    Background="#1a1a1a"
+                    BorderBrush="#30FFFFFF"
+                    BorderThickness="1"
+                    HorizontalContentAlignment="Center" 
+                    VerticalContentAlignment="Center"
+                    CornerRadius="0, 10, 10, 0">
+						<Path Data="M0,0 L10,10 L0,20 Z" Fill="LightGray">
+							<Path.RenderTransform>
+								<RotateTransform Angle="{Binding #ToggleButtonHide.IsChecked, Converter={StaticResource BoolToAngleConverter}}"/>
+							</Path.RenderTransform>
+						</Path>
+                        <ToggleButton.Styles>
+							<Style Selector="ToggleButton:checked /template/ ContentPresenter#PART_ContentPresenter">
+								<Setter Property="CornerRadius" Value="10, 0, 0, 10" />
+                                <Setter Property="Background" Value="#1a1a1a" />
+                                <Setter Property="BorderThickness" Value="1" />
+                                <Setter Property="BorderBrush" Value="#30FFFFFF" />
+                            </Style>
+                            <Style Selector="ToggleButton:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+                                <Setter Property="Background" Value="#303030" />
+                                <Setter Property="BorderThickness" Value="1" />
+                                <Setter Property="BorderBrush" Value="#30FFFFFF" />
+                                
+                            </Style>
+                        </ToggleButton.Styles>
+					</ToggleButton>
+                    
+				</Grid>
+			</SplitView.Pane>
+		</SplitView>
+    </Panel>
 </Window>

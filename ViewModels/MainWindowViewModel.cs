@@ -1,11 +1,16 @@
-﻿using Avalonia.Controls;
+﻿using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Input;
 using Avalonia.Media;
+using ColorPickerApp.Views;
 using ReactiveUI;
 using System;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Reactive;
 using System.Reflection;
+using System.Text.Json.Serialization;
 
 namespace ColorPickerApp.ViewModels;
 
@@ -24,6 +29,11 @@ public class MainWindowViewModel : ViewModelBase
     private int _copyFormatIndex = 0;
     private bool _copyWithAlpha = true;
 
+
+    public KeyGesture PickerKeyGesture => KeyGesture.Parse(App.Settings.PickerHotkey);
+
+    public KeyGesture OpenWindowKeyGesture => KeyGesture.Parse(App.Settings.OpenWindowHotkey);
+
     public ObservableCollection<Button> AdditionalColors { get; } = new();
 
     public MainWindowViewModel()
@@ -33,6 +43,18 @@ public class MainWindowViewModel : ViewModelBase
 
         CopyFormatIndex = App.Settings.CopyFormatIndex;
         CopyWithAlpha = (bool)App.Settings.IsCopyWithAlpha;
+
+
+        App.Settings.PropertyChanged += Settings_PropertyChanged;
+    }
+
+    private void Settings_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(App.Settings.PickerHotkey))
+            this.RaisePropertyChanged(nameof(PickerKeyGesture));
+
+        if (e.PropertyName == nameof(App.Settings.OpenWindowHotkey))
+            this.RaisePropertyChanged(nameof(OpenWindowKeyGesture));
     }
 
     public ReactiveCommand<Unit, Unit> CopyCommand { get; }
@@ -286,4 +308,40 @@ public class MainWindowViewModel : ViewModelBase
         this.RaisePropertyChanged(nameof(OpaqueColor));
         this.RaisePropertyChanged(nameof(SelectedBrush));
     }
+
+    private Window? GetWindow()
+    {
+        if (App.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            return desktop.MainWindow;
+        }
+
+        return null;
+    }
+
+    public void ShowWindowCommand()
+    {
+        MainWindow window = GetWindow() as MainWindow;
+        if (window == null) return;
+
+        window.Open();
+    }
+
+    public void ShowEyedropper()
+    {
+        MainWindow window = GetWindow() as MainWindow;
+        if (window == null) return;
+
+        window.ShowEyedropper();
+    }
+
+    public void QuitCommand()
+    {
+        MainWindow window = GetWindow() as MainWindow;
+        if (window == null) return;
+
+        window.ClosePermanent();
+    }
+
+
 }

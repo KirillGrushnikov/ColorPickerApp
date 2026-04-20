@@ -19,7 +19,11 @@ public class AlphaSliderControl : Control
     static AlphaSliderControl()
     {
         AffectsRender<AlphaSliderControl>(BaseColorProperty, AlphaProperty);
-        
+    }
+
+    public AlphaSliderControl()
+    {
+        App.Settings.PropertyChanged += (s, e) => InvalidateVisual();
     }
 
     public Color BaseColor
@@ -60,8 +64,8 @@ public class AlphaSliderControl : Control
         // Фиксированный размер клетки в DIP, кратный целому числу
         double cellSize = rect.Width / 3.0; // можно подобрать под дизайн
 
-        var light = new SolidColorBrush(Color.FromRgb(238, 238, 238));
-        var dark = new SolidColorBrush(Color.FromRgb(200, 200, 200));
+        var light = App.Settings.TransparentBackground1;
+        var dark = App.Settings.TransparentBackground2;
 
         // Рисуем только целое количество клеток, чтобы избежать обрезанных половинок
         int cols = (int)Math.Ceiling(rect.Width / cellSize);

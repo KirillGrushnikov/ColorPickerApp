@@ -1,17 +1,77 @@
+using Avalonia.Input;
+using Avalonia.Media;
+using ReactiveUI;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace ColorPickerApp;
 
-public sealed class AppSettingsStore
+public sealed class AppSettingsStore : ReactiveObject
 {
     private const string SettingsFileName = "settings.json";
 
     public bool IsCopyWithAlpha { get; set; } = true;
     public bool IsCopyWithFunction { get; set; } = true;
     public List<string> SavedSwatches { get; set; } = new();
+
+    public bool PermanentCloseWindow { get; set; } = false;
+    public bool AutoCopyOnPick { get; set; } = false;
+
+
+    private string _pickerHotkey = "Ctrl+Shift+P";
+    private string _openWindowHotkey = "Ctrl+Shift+O";
+
+    public string PickerHotkey
+    {
+        get => _pickerHotkey;
+        set => this.RaiseAndSetIfChanged(ref _pickerHotkey, value);
+    }
+
+    public string OpenWindowHotkey
+    {
+        get => _openWindowHotkey;
+        set => this.RaiseAndSetIfChanged(ref _openWindowHotkey, value);
+    }
+
+    public bool RestoreWindowAfterPick { get; set; } = false;
+
+    public int TransparentBackgroundIndex { get; set; } = 0;
+
+
+    private string _transparentColor1 = "#FFFFFF";
+    private string _transparentColor2 = "#C1C1C1";
+
+    public string TransparentColor1 
+    { 
+        get => _transparentColor1;
+        set
+        {
+            _transparentColor1 = value;
+            this.RaisePropertyChanged(nameof(TransparentBackground1));
+        }
+    }
+
+    public string TransparentColor2
+    {
+        get => _transparentColor2;
+        set
+        {
+            _transparentColor2 = value;
+            this.RaisePropertyChanged(nameof(TransparentBackground2));
+        }
+    }
+
+    // Кисти, доступные для привязки в UI, но не сериализуемые
+    [JsonIgnore]
+    public SolidColorBrush TransparentBackground1 => 
+        new SolidColorBrush(Color.Parse(TransparentColor1));
+
+    [JsonIgnore]
+    public SolidColorBrush TransparentBackground2 =>
+        new SolidColorBrush(Color.Parse(TransparentColor2));
 
     public int CopyFormatIndex { get; set; } = 0;
 
