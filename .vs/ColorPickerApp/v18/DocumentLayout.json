@@ -3,36 +3,40 @@
   "WorkspaceRootPath": "D:\\\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0421\u0432\u043E\u0451\\ColorPickerApp\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{FC665516-34F6-69E7-5385-5BBBDDA8ED7E}|ColorPickerApp.csproj|d:\\\u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0441\u0432\u043E\u0451\\colorpickerapp\\views\\mainwindow.axaml||{6D5344A2-2FCD-49DE-A09D-6A14FD1B1224}",
-      "RelativeMoniker": "D:0:0:{FC665516-34F6-69E7-5385-5BBBDDA8ED7E}|ColorPickerApp.csproj|solutionrelative:views\\mainwindow.axaml||{6D5344A2-2FCD-49DE-A09D-6A14FD1B1224}"
+      "AbsoluteMoniker": "D:0:0:{FC665516-34F6-69E7-5385-5BBBDDA8ED7E}|ColorPickerApp.csproj|d:\\\u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0441\u0432\u043E\u0451\\colorpickerapp\\app.axaml||{6D5344A2-2FCD-49DE-A09D-6A14FD1B1224}",
+      "RelativeMoniker": "D:0:0:{FC665516-34F6-69E7-5385-5BBBDDA8ED7E}|ColorPickerApp.csproj|solutionrelative:app.axaml||{6D5344A2-2FCD-49DE-A09D-6A14FD1B1224}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{FC665516-34F6-69E7-5385-5BBBDDA8ED7E}|ColorPickerApp.csproj|d:\\\u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0441\u0432\u043E\u0451\\colorpickerapp\\colortobrushconverter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{FC665516-34F6-69E7-5385-5BBBDDA8ED7E}|ColorPickerApp.csproj|solutionrelative:colortobrushconverter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{FC665516-34F6-69E7-5385-5BBBDDA8ED7E}|ColorPickerApp.csproj|d:\\\u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0441\u0432\u043E\u0451\\colorpickerapp\\views\\settingsview.axaml||{6D5344A2-2FCD-49DE-A09D-6A14FD1B1224}",
+      "RelativeMoniker": "D:0:0:{FC665516-34F6-69E7-5385-5BBBDDA8ED7E}|ColorPickerApp.csproj|solutionrelative:views\\settingsview.axaml||{6D5344A2-2FCD-49DE-A09D-6A14FD1B1224}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FC665516-34F6-69E7-5385-5BBBDDA8ED7E}|ColorPickerApp.csproj|d:\\\u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0441\u0432\u043E\u0451\\colorpickerapp\\viewmodels\\settingsviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{FC665516-34F6-69E7-5385-5BBBDDA8ED7E}|ColorPickerApp.csproj|solutionrelative:viewmodels\\settingsviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FC665516-34F6-69E7-5385-5BBBDDA8ED7E}|ColorPickerApp.csproj|d:\\\u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0441\u0432\u043E\u0451\\colorpickerapp\\app.axaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{FC665516-34F6-69E7-5385-5BBBDDA8ED7E}|ColorPickerApp.csproj|solutionrelative:app.axaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{FC665516-34F6-69E7-5385-5BBBDDA8ED7E}|ColorPickerApp.csproj|d:\\\u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0441\u0432\u043E\u0451\\colorpickerapp\\views\\mainwindow.axaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{FC665516-34F6-69E7-5385-5BBBDDA8ED7E}|ColorPickerApp.csproj|solutionrelative:views\\mainwindow.axaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{FC665516-34F6-69E7-5385-5BBBDDA8ED7E}|ColorPickerApp.csproj|d:\\\u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0441\u0432\u043E\u0451\\colorpickerapp\\viewmodels\\mainwindowviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{FC665516-34F6-69E7-5385-5BBBDDA8ED7E}|ColorPickerApp.csproj|solutionrelative:viewmodels\\mainwindowviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{FC665516-34F6-69E7-5385-5BBBDDA8ED7E}|ColorPickerApp.csproj|d:\\\u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0441\u0432\u043E\u0451\\colorpickerapp\\services\\globalhotkeyservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{FC665516-34F6-69E7-5385-5BBBDDA8ED7E}|ColorPickerApp.csproj|solutionrelative:services\\globalhotkeyservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{FC665516-34F6-69E7-5385-5BBBDDA8ED7E}|ColorPickerApp.csproj|d:\\\u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0441\u0432\u043E\u0451\\colorpickerapp\\views\\eyedropperoverlaywindow.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{FC665516-34F6-69E7-5385-5BBBDDA8ED7E}|ColorPickerApp.csproj|solutionrelative:views\\eyedropperoverlaywindow.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{FC665516-34F6-69E7-5385-5BBBDDA8ED7E}|ColorPickerApp.csproj|d:\\\u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0441\u0432\u043E\u0451\\colorpickerapp\\views\\settingsview.axaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{FC665516-34F6-69E7-5385-5BBBDDA8ED7E}|ColorPickerApp.csproj|solutionrelative:views\\settingsview.axaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{FC665516-34F6-69E7-5385-5BBBDDA8ED7E}|ColorPickerApp.csproj|d:\\\u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0441\u0432\u043E\u0451\\colorpickerapp\\controls\\colorwheelsvcontrol.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{FC665516-34F6-69E7-5385-5BBBDDA8ED7E}|ColorPickerApp.csproj|solutionrelative:controls\\colorwheelsvcontrol.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{FC665516-34F6-69E7-5385-5BBBDDA8ED7E}|ColorPickerApp.csproj|d:\\\u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0441\u0432\u043E\u0451\\colorpickerapp\\appsettingsstore.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{FC665516-34F6-69E7-5385-5BBBDDA8ED7E}|ColorPickerApp.csproj|solutionrelative:appsettingsstore.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{FC665516-34F6-69E7-5385-5BBBDDA8ED7E}|ColorPickerApp.csproj|d:\\\u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0441\u0432\u043E\u0451\\colorpickerapp\\colorpickerapp.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|",
-      "RelativeMoniker": "D:0:0:{FC665516-34F6-69E7-5385-5BBBDDA8ED7E}|ColorPickerApp.csproj|solutionrelative:colorpickerapp.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{FC665516-34F6-69E7-5385-5BBBDDA8ED7E}|ColorPickerApp.csproj|d:\\\u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0441\u0432\u043E\u0451\\colorpickerapp\\app.axaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{FC665516-34F6-69E7-5385-5BBBDDA8ED7E}|ColorPickerApp.csproj|solutionrelative:app.axaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{FC665516-34F6-69E7-5385-5BBBDDA8ED7E}|ColorPickerApp.csproj|d:\\\u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0441\u0432\u043E\u0451\\colorpickerapp\\views\\mainwindow.axaml||{6D5344A2-2FCD-49DE-A09D-6A14FD1B1224}",
+      "RelativeMoniker": "D:0:0:{FC665516-34F6-69E7-5385-5BBBDDA8ED7E}|ColorPickerApp.csproj|solutionrelative:views\\mainwindow.axaml||{6D5344A2-2FCD-49DE-A09D-6A14FD1B1224}"
     }
   ],
   "DocumentGroupContainers": [
@@ -42,98 +46,113 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 7,
+          "SelectedChildIndex": 4,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "ColorToBrushConverter.cs",
-              "DocumentMoniker": "D:\\\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0421\u0432\u043E\u0451\\ColorPickerApp\\ColorToBrushConverter.cs",
-              "RelativeDocumentMoniker": "ColorToBrushConverter.cs",
-              "ToolTip": "D:\\\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0421\u0432\u043E\u0451\\ColorPickerApp\\ColorToBrushConverter.cs",
-              "RelativeToolTip": "ColorToBrushConverter.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAAAAAAAAAAAAA==",
+              "DocumentIndex": 2,
+              "Title": "SettingsViewModel.cs",
+              "DocumentMoniker": "D:\\\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0421\u0432\u043E\u0451\\ColorPickerApp\\ViewModels\\SettingsViewModel.cs",
+              "RelativeDocumentMoniker": "ViewModels\\SettingsViewModel.cs",
+              "ToolTip": "D:\\\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0421\u0432\u043E\u0451\\ColorPickerApp\\ViewModels\\SettingsViewModel.cs",
+              "RelativeToolTip": "ViewModels\\SettingsViewModel.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAATAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-19T20:17:59.725Z",
+              "WhenOpened": "2026-04-20T21:14:14.894Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 6,
+              "Title": "SettingsView.axaml.cs",
+              "DocumentMoniker": "D:\\\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0421\u0432\u043E\u0451\\ColorPickerApp\\Views\\SettingsView.axaml.cs",
+              "RelativeDocumentMoniker": "Views\\SettingsView.axaml.cs",
+              "ToolTip": "D:\\\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0421\u0432\u043E\u0451\\ColorPickerApp\\Views\\SettingsView.axaml.cs",
+              "RelativeToolTip": "Views\\SettingsView.axaml.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-20T21:14:13.377Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "GlobalHotkeyService.cs",
+              "DocumentMoniker": "D:\\\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0421\u0432\u043E\u0451\\ColorPickerApp\\Services\\GlobalHotkeyService.cs",
+              "RelativeDocumentMoniker": "Services\\GlobalHotkeyService.cs",
+              "ToolTip": "D:\\\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0421\u0432\u043E\u0451\\ColorPickerApp\\Services\\GlobalHotkeyService.cs",
+              "RelativeToolTip": "Services\\GlobalHotkeyService.cs",
+              "ViewState": "AgIAAA8AAAAAAAAAAAAAAEEAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-20T21:04:58.587Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "SettingsView.axaml",
+              "DocumentMoniker": "D:\\\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0421\u0432\u043E\u0451\\ColorPickerApp\\Views\\SettingsView.axaml",
+              "RelativeDocumentMoniker": "Views\\SettingsView.axaml",
+              "ToolTip": "D:\\\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0421\u0432\u043E\u0451\\ColorPickerApp\\Views\\SettingsView.axaml",
+              "RelativeToolTip": "Views\\SettingsView.axaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2026-04-20T20:51:39.198Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "App.axaml",
+              "DocumentMoniker": "D:\\\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0421\u0432\u043E\u0451\\ColorPickerApp\\App.axaml",
+              "RelativeDocumentMoniker": "App.axaml",
+              "ToolTip": "D:\\\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0421\u0432\u043E\u0451\\ColorPickerApp\\App.axaml",
+              "RelativeToolTip": "App.axaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2026-04-20T20:17:21.553Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
               "Title": "App.axaml.cs",
               "DocumentMoniker": "D:\\\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0421\u0432\u043E\u0451\\ColorPickerApp\\App.axaml.cs",
               "RelativeDocumentMoniker": "App.axaml.cs",
               "ToolTip": "D:\\\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0421\u0432\u043E\u0451\\ColorPickerApp\\App.axaml.cs",
               "RelativeToolTip": "App.axaml.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABYAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAABoAAAAAAAAAAAAgwCYAAAAeAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-19T19:06:11.168Z"
+              "WhenOpened": "2026-04-20T19:33:53.544Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "ColorPickerApp",
-              "DocumentMoniker": "D:\\\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0421\u0432\u043E\u0451\\ColorPickerApp\\ColorPickerApp.csproj",
-              "RelativeDocumentMoniker": "ColorPickerApp.csproj",
-              "ToolTip": "D:\\\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0421\u0432\u043E\u0451\\ColorPickerApp\\ColorPickerApp.csproj",
-              "RelativeToolTip": "ColorPickerApp.csproj",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2026-04-19T18:23:58.338Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "ColorWheelSvControl.cs",
-              "DocumentMoniker": "D:\\\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0421\u0432\u043E\u0451\\ColorPickerApp\\Controls\\ColorWheelSvControl.cs",
-              "RelativeDocumentMoniker": "Controls\\ColorWheelSvControl.cs",
-              "ToolTip": "D:\\\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0421\u0432\u043E\u0451\\ColorPickerApp\\Controls\\ColorWheelSvControl.cs",
-              "RelativeToolTip": "Controls\\ColorWheelSvControl.cs",
-              "ViewState": "AgIAAGgAAAAAAAAAAAAUwHYAAABVAAAAAAAAAA==",
+              "DocumentIndex": 7,
+              "Title": "AppSettingsStore.cs",
+              "DocumentMoniker": "D:\\\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0421\u0432\u043E\u0451\\ColorPickerApp\\AppSettingsStore.cs",
+              "RelativeDocumentMoniker": "AppSettingsStore.cs",
+              "ToolTip": "D:\\\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0421\u0432\u043E\u0451\\ColorPickerApp\\AppSettingsStore.cs",
+              "RelativeToolTip": "AppSettingsStore.cs",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAAABMAAAAkAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-19T05:55:12.572Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "MainWindowViewModel.cs",
-              "DocumentMoniker": "D:\\\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0421\u0432\u043E\u0451\\ColorPickerApp\\ViewModels\\MainWindowViewModel.cs",
-              "RelativeDocumentMoniker": "ViewModels\\MainWindowViewModel.cs",
-              "ToolTip": "D:\\\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0421\u0432\u043E\u0451\\ColorPickerApp\\ViewModels\\MainWindowViewModel.cs",
-              "RelativeToolTip": "ViewModels\\MainWindowViewModel.cs",
-              "ViewState": "AgIAAOIAAAAAAAAAAAAwwDEAAAAcAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-19T04:26:27.554Z",
+              "WhenOpened": "2026-04-20T18:00:34.745Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 4,
-              "Title": "EyedropperOverlayWindow.cs",
-              "DocumentMoniker": "D:\\\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0421\u0432\u043E\u0451\\ColorPickerApp\\Views\\EyedropperOverlayWindow.cs",
-              "RelativeDocumentMoniker": "Views\\EyedropperOverlayWindow.cs",
-              "ToolTip": "D:\\\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0421\u0432\u043E\u0451\\ColorPickerApp\\Views\\EyedropperOverlayWindow.cs",
-              "RelativeToolTip": "Views\\EyedropperOverlayWindow.cs",
-              "ViewState": "AgIAAF8AAAAAAAAAAAAcwHIAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-18T23:15:57.89Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
               "Title": "MainWindow.axaml.cs",
               "DocumentMoniker": "D:\\\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0421\u0432\u043E\u0451\\ColorPickerApp\\Views\\MainWindow.axaml.cs",
               "RelativeDocumentMoniker": "Views\\MainWindow.axaml.cs",
               "ToolTip": "D:\\\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0421\u0432\u043E\u0451\\ColorPickerApp\\Views\\MainWindow.axaml.cs",
               "RelativeToolTip": "Views\\MainWindow.axaml.cs",
-              "ViewState": "AgIAAEIAAAAAAAAAAAAowFIAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAADMAAAAAAAAAAAAswEAAAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-04-18T21:00:57.187Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 8,
               "Title": "MainWindow.axaml",
               "DocumentMoniker": "D:\\\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\\\u0421\u0432\u043E\u0451\\ColorPickerApp\\Views\\MainWindow.axaml",
               "RelativeDocumentMoniker": "Views\\MainWindow.axaml",

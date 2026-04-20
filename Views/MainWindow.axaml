@@ -262,11 +262,15 @@
                     <DockPanel LastChildFill="True">
                         <Grid Margin="-12" DockPanel.Dock="Top" ColumnDefinitions="auto,*,auto">
                             <Button Content="1" Grid.Column="0" Click="ButtonBackColorMode_OnClick">
-						        <PathIcon Data="{StaticResource arrow-left-icon}" Foreground="LightGray" Width="14" Height="14"/>		
+                                <Button.Content>
+						            <PathIcon Data="{StaticResource arrow-left-icon}" Foreground="LightGray" Width="14" Height="14"/>		
+                                </Button.Content>
                             </Button>
                             <Label Name="ColorModeLabel" Content="Моно" VerticalAlignment="Center" HorizontalAlignment="Center" Grid.Column="1"/>
                             <Button Content="2" Grid.Column="2" Click="ButtonNextColorMode_OnClick">
-						        <PathIcon Data="{StaticResource arrow-right-icon}" Foreground="LightGray" Width="14" Height="14"/>	
+                                <Button.Content>		
+						            <PathIcon Data="{StaticResource arrow-right-icon}" Foreground="LightGray" Width="14" Height="14"/>	
+                                </Button.Content>
                             </Button>
                         </Grid>
                         <Grid DockPanel.Dock="Bottom" ColumnDefinitions="320,Auto" ColumnSpacing="10" Margin="0,0,0,0">

@@ -7,7 +7,9 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using ColorPickerApp.Controls;
+using ColorPickerApp.Services;
 using ColorPickerApp.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.ComponentModel;
 using System.Linq;
@@ -31,8 +33,46 @@ public partial class MainWindow : Window
             latticeToggleButton.IsChecked = App.Settings.IsCopyWithFunction;
             EnsureSwatchesStorage();
             BuildSwatches();
+
+            var hotkeyService = App.ServiceProvider.GetRequiredService<GlobalHotkeyService>();
+            hotkeyService.HotkeyOpenAppPressed += () => Dispatcher.UIThread.Post(Open);
+            hotkeyService.HotkeyOpenPipetePressed += () => Dispatcher.UIThread.Post(ShowEyedropper);
+            
         };
         Wheel.PropertyChanged += Wheel_PropertyChanged;
+    }
+
+    private bool _closeInTray = false;
+
+    public void ClosePermanent()
+    {
+        _closeInTray = true;
+        Close();
+    }
+    public void Open()
+    {
+        WindowState = WindowState.Normal;
+        ShowInTaskbar = true;
+        Show();
+        Focus();
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        base.OnClosed(e);
+        var hotkeyService = App.ServiceProvider.GetRequiredService<GlobalHotkeyService>();
+        hotkeyService.Stop();
+    }
+
+    protected override void OnClosing(WindowClosingEventArgs e)
+    {
+        base.OnClosing(e);
+        e.Cancel = !App.Settings.PermanentCloseWindow && !_closeInTray;
+        if (!_closeInTray)
+        {
+            WindowState = WindowState.Minimized;
+            ShowInTaskbar = false;
+        }
     }
 
     private void Wheel_PropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
@@ -163,28 +203,62 @@ public partial class MainWindow : Window
         _timerLisibleCopyText.Start();
     }
 
-    public static async Task<Color?> ShowAndPickColor(Window owner)
+
+    private EyedropperOverlayWindow? eyedropperOverlayWindow;
+    public async Task<Color?> ShowAndPickColor(Window owner)
     {
         var (capture, bounds, renderScaling) = EyedropperOverlayWindow.CaptureAllScreens(owner);
-        var overlay = new EyedropperOverlayWindow(capture, bounds, renderScaling);
+        eyedropperOverlayWindow = new EyedropperOverlayWindow(capture, bounds, renderScaling);
 
         var tcs = new TaskCompletionSource<Color?>();
 
         void OnClosed(object? s, EventArgs e)
         {
-            overlay.Closed -= OnClosed;
-            tcs.TrySetResult(overlay.Result);
+            eyedropperOverlayWindow.Closed -= OnClosed;
+            tcs.TrySetResult(eyedropperOverlayWindow.Result);
             capture.Dispose();
         }
 
-        overlay.Closed += OnClosed;
+        eyedropperOverlayWindow.Closed += OnClosed;
 
-        overlay.Show();
+        eyedropperOverlayWindow.Show();
 
         var result = await tcs.Task;
         await Task.Delay(50);
 
         return result;
+    }
+
+    public async void ShowEyedropper()
+    {
+        if (Vm is null)
+            return;
+
+        if (eyedropperOverlayWindow != null && eyedropperOverlayWindow.IsVisible)
+            return;
+
+        this.WindowState = WindowState.Minimized;
+        await Task.Delay(200);
+        var overlayResult = await ShowAndPickColor(this);
+
+
+        if (overlayResult is Color color)
+        {
+            Vm.SetColor(color);
+            RefreshCopyText();
+
+
+            if (App.Settings.RestoreWindowAfterPick)
+            {
+                this.WindowState = WindowState.Normal;
+                this.Focus();
+            }
+
+            if (App.Settings.AutoCopyOnPick)
+            {
+                OnCopyClick(null, null);
+            }
+        }
     }
 
     private async void OnEyedropperClick(object? sender, RoutedEventArgs e)
@@ -201,10 +275,15 @@ public partial class MainWindow : Window
         {
             Vm.SetColor(color);
             RefreshCopyText();
-        }
 
-        this.WindowState = WindowState.Normal;
-        this.Focus();
+            this.WindowState = WindowState.Normal;
+            this.Focus();
+
+            if (App.Settings.AutoCopyOnPick)
+            {
+                OnCopyClick(null, null);
+            }
+        }
     }
 
     private void OnCopyFormatChanged(object? sender, SelectionChangedEventArgs e)
@@ -437,7 +516,6 @@ public partial class MainWindow : Window
 
     private void CheckMouse()
     {
-        Console.WriteLine(mousePos.X);
         if (mousePos.X >= 0 && mousePos.X < 20)
             ShowSplitView();
         else

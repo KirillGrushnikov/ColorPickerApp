@@ -62,6 +62,11 @@ public static class ColorMath
         return (h, s, v);
     }
 
+    public static string ToHex(Color color)
+    {
+        return $"#{color.R:x2}{color.G:x2}{color.B:x2}";
+    }
+
     public static double Clamp01(double value) => Math.Clamp(value, 0, 1);
 
     private static double Mod(double value, double mod)

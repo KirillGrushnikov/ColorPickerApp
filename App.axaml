@@ -1,13 +1,34 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:compilerservices="using:System.Runtime.CompilerServices"
              x:Class="ColorPickerApp.App"
              xmlns:local="using:ColorPickerApp"
-             RequestedThemeVariant="Default">
-             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+             xmlns:vm="using:ColorPickerApp.ViewModels"
+             RequestedThemeVariant="Default"
+             x:DataType="vm:MainWindowViewModel">
 
     <Application.DataTemplates>
         <local:ViewLocator/>
     </Application.DataTemplates>
+
+    
+    <TrayIcon.Icons>
+    <TrayIcons>
+      <TrayIcon Icon="/Assets/avalonia-logo.ico"
+                ToolTipText="Color Picker Pro"
+                Command="{Binding ShowWindowCommand}">
+        <TrayIcon.Menu>
+          <NativeMenu>
+            <NativeMenuItem Header="Открыть" Command="{Binding ShowWindowCommand}" Gesture="{Binding OpenWindowKeyGesture}">
+            </NativeMenuItem>
+            <NativeMenuItem Header="Пипетка" Command="{Binding ShowEyedropper}" Gesture="{Binding PickerKeyGesture}"/>
+            <NativeMenuItemSeparator />
+            <NativeMenuItem Header="Выход" Command="{Binding QuitCommand}"/>
+          </NativeMenu>
+        </TrayIcon.Menu>
+      </TrayIcon>
+    </TrayIcons>
+  </TrayIcon.Icons>
   
     <Application.Styles>
         <FluentTheme />
