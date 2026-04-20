@@ -12,13 +12,14 @@ public class AlphaSliderControl : Control
         AvaloniaProperty.Register<AlphaSliderControl, Color>(nameof(BaseColor), Colors.White);
 
     public static readonly StyledProperty<double> AlphaProperty =
-        AvaloniaProperty.Register<AlphaSliderControl, double>(nameof(Alpha), 1);
+        AvaloniaProperty.Register<AlphaSliderControl, double>(nameof(Alpha), 1.0);
 
     private bool _dragging;
-    
+
     static AlphaSliderControl()
     {
         AffectsRender<AlphaSliderControl>(BaseColorProperty, AlphaProperty);
+        
     }
 
     public Color BaseColor
@@ -36,30 +37,89 @@ public class AlphaSliderControl : Control
     public override void Render(DrawingContext context)
     {
         base.Render(context);
-        var localBounds = new Rect(0, 0, Math.Ceiling(Bounds.Width), Math.Ceiling(Bounds.Height));
-        DrawCheckerboard(context, localBounds);
 
-        var top = Color.FromArgb(255, BaseColor.R, BaseColor.G, BaseColor.B);
-        var bottom = Color.FromArgb(0, BaseColor.R, BaseColor.G, BaseColor.B);
-        context.DrawRectangle(
-            new LinearGradientBrush
+        // »спользуем границы как есть, без Ceiling
+        var bounds = Bounds;
+        if (bounds.Width <= 0 || bounds.Height <= 0)
+            return;
+
+        // ѕриводим к целым координатам дл€ устранени€ субпиксельного дрожани€
+        var rect = new Rect(
+            0,
+            0,
+            Math.Ceiling(bounds.Width),
+            Math.Ceiling(bounds.Height));
+
+        DrawCheckerboard(context, rect);
+        DrawAlphaGradient(context, rect);
+        DrawAlphaIndicator(context, rect);
+    }
+
+    private void DrawCheckerboard(DrawingContext context, Rect rect)
+    {
+        // ‘иксированный размер клетки в DIP, кратный целому числу
+        double cellSize = rect.Width / 3.0; // можно подобрать под дизайн
+
+        var light = new SolidColorBrush(Color.FromRgb(238, 238, 238));
+        var dark = new SolidColorBrush(Color.FromRgb(200, 200, 200));
+
+        // –исуем только целое количество клеток, чтобы избежать обрезанных половинок
+        int cols = (int)Math.Ceiling(rect.Width / cellSize);
+        int rows = (int)Math.Ceiling(rect.Height / cellSize);
+
+        for (int row = 0; row < rows; row++)
+        {
+            for (int col = 0; col < cols; col++)
             {
-                StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
-                EndPoint = new RelativePoint(0, 1, RelativeUnit.Relative),
-                GradientStops = new GradientStops
-                {
-                    new(top, 0),
-                    new(bottom, 1),
-                },
-            },
-            null,
-            localBounds);
+                bool useDark = (row + col) % 2 == 0;
+                var cellRect = new Rect(
+                    rect.X + col * cellSize,
+                    rect.Y + row * cellSize,
+                    cellSize,
+                    cellSize);
 
-        var y = (1 - ColorMath.Clamp01(Alpha)) * localBounds.Height;
-        var leftCenter = new Point(-8, y);
-        var rightCenter = new Point(Math.Max(-8, localBounds.Width + 8), y);
-        context.DrawEllipse(new SolidColorBrush(Color.FromArgb(90, 255, 255, 255)), new Pen(Brushes.White, 1.2), leftCenter, 2, 2);
-        context.DrawEllipse(new SolidColorBrush(Color.FromArgb(90, 255, 255, 255)), new Pen(Brushes.White, 1.2), rightCenter, 2, 2);
+                // ќбрезаем последнюю клетку по границе контрола
+                cellRect = cellRect.Intersect(rect);
+                if (cellRect.Width > 0 && cellRect.Height > 0)
+                {
+                    context.DrawRectangle(useDark ? dark : light, null, cellRect);
+                }
+            }
+        }
+    }
+
+    private void DrawAlphaGradient(DrawingContext context, Rect rect)
+    {
+        var topColor = Color.FromArgb(255, BaseColor.R, BaseColor.G, BaseColor.B);
+        var bottomColor = Color.FromArgb(0, BaseColor.R, BaseColor.G, BaseColor.B);
+
+        var gradientBrush = new LinearGradientBrush
+        {
+            StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
+            EndPoint = new RelativePoint(0, 1, RelativeUnit.Relative),
+            GradientStops = new GradientStops
+            {
+                new(topColor, 0.0),
+                new(bottomColor, 1.0)
+            }
+        };
+
+        context.DrawRectangle(gradientBrush, null, rect);
+    }
+
+    private void DrawAlphaIndicator(DrawingContext context, Rect rect)
+    {
+        double y = rect.Y + (1 - ColorMath.Clamp01(Alpha)) * rect.Height;
+
+        // –исуем два небольших круга по бокам дл€ нагл€дности положени€ ползунка
+        var leftCenter = new Point(rect.X - 4, y);
+        var rightCenter = new Point(rect.X + rect.Width + 4, y);
+
+        var fillBrush = new SolidColorBrush(Color.FromArgb(90, 255, 255, 255));
+        var pen = new Pen(Brushes.White, 1.2);
+
+        context.DrawEllipse(fillBrush, pen, leftCenter, 2, 2);
+        context.DrawEllipse(fillBrush, pen, rightCenter, 2, 2);
     }
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)
@@ -88,23 +148,9 @@ public class AlphaSliderControl : Control
     {
         if (Bounds.Height <= 0)
             return;
-        Alpha = ColorMath.Clamp01(1 - point.Y / Bounds.Height);
+
+        double relativeY = (point.Y - Bounds.Y) / Bounds.Height;
+        Alpha = ColorMath.Clamp01(1 - relativeY);
         InvalidateVisual();
-    }
-
-    private static void DrawCheckerboard(DrawingContext context, Rect rect)
-    {
-        double size = rect.Width / 3;
-        var light = new SolidColorBrush(Color.FromRgb(238, 238, 238));
-        var dark = new SolidColorBrush(Color.FromRgb(200, 200, 200));
-
-        for (var y = 0.0; y < rect.Height; y += size)
-        {
-            for (var x = 0.0; x < rect.Width; x += size)
-            {
-                var useDark = ((x / size) + (y / size)) % 2 == 0;
-                context.DrawRectangle(useDark ? dark : light, null, new Rect(x, y, size, size));
-            }
-        }
     }
 }
