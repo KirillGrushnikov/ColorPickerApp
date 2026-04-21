@@ -202,7 +202,7 @@ namespace ColorPickerApp.ViewModels
             AutoCopyOnPick = false;
             PickerHotkey = "Ctrl+Shift+P";
             OpenWindowHotkey = "Ctrl+Shift+O";
-            RestoreWindowAfterPick = false;
+            RestoreWindowAfterPick = true;
             BackgroundTypeIndex = 0;
             CustomBackgroundColor = Colors.White;
         }

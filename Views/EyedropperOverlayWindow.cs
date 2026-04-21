@@ -88,7 +88,8 @@ public class EyedropperOverlayWindow : Window
         base.OnPointerPressed(e);
         var pointDip = e.GetPosition(this);
         var (x, y) = GetCaptureCoords(pointDip);
-        _result = GetPixelColorAt(new Point(x, y));
+        if (x != -1 && y != -1)
+            _result = GetPixelColorAt(new Point(x, y));
         Close();
     }
 
@@ -106,11 +107,20 @@ public class EyedropperOverlayWindow : Window
     private (int x, int y) GetCaptureCoords(APoint pointDip)
     {
         // pointDip.X/Y в DIP, Bounds.Width/Height в DIP, _capture.Width/Height в пикселях
-        double scaleX = _capture.Width / Bounds.Width;
-        double scaleY = _capture.Height / Bounds.Height;
-        int x = (int)Math.Clamp(pointDip.X * scaleX, 0, _capture.Width - 1);
-        int y = (int)Math.Clamp(pointDip.Y * scaleY, 0, _capture.Height - 1);
-        return (x, y);
+        try
+        {
+            double scaleX = _capture.Width / Bounds.Width;
+            double scaleY = _capture.Height / Bounds.Height;
+            int x = (int)Math.Clamp(pointDip.X * scaleX, 0, _capture.Width - 1);
+            int y = (int)Math.Clamp(pointDip.Y * scaleY, 0, _capture.Height - 1);
+            return (x, y);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            Console.WriteLine(ex.StackTrace);
+            return (-1, -1);
+        }
     }
 
     private Avalonia.Media.Color GetPixelColorAt(APoint point)

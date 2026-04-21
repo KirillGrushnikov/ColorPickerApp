@@ -212,6 +212,7 @@ public partial class MainWindow : Window
 
 
     private EyedropperOverlayWindow? eyedropperOverlayWindow;
+    private bool eyedropperOverlayWindowIsOpen = false;
     public async Task<Color?> ShowAndPickColor(Window owner)
     {
         var (capture, bounds, renderScaling) = EyedropperOverlayWindow.CaptureAllScreens(owner);
@@ -223,6 +224,8 @@ public partial class MainWindow : Window
         {
             eyedropperOverlayWindow.Closed -= OnClosed;
             tcs.TrySetResult(eyedropperOverlayWindow.Result);
+            eyedropperOverlayWindowIsOpen = false;
+            eyedropperOverlayWindow = null;
             capture.Dispose();
         }
 
@@ -241,9 +244,10 @@ public partial class MainWindow : Window
         if (Vm is null)
             return;
 
-        if (eyedropperOverlayWindow != null && eyedropperOverlayWindow.IsVisible)
+        if (eyedropperOverlayWindowIsOpen)
             return;
 
+        eyedropperOverlayWindowIsOpen = true;
         this.WindowState = WindowState.Minimized;
         await Task.Delay(200);
         var overlayResult = await ShowAndPickColor(this);
@@ -257,8 +261,7 @@ public partial class MainWindow : Window
 
             if (App.Settings.RestoreWindowAfterPick)
             {
-                this.WindowState = WindowState.Normal;
-                this.Focus();
+                Open();
             }
 
             if (App.Settings.AutoCopyOnPick)
