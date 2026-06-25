@@ -212,7 +212,6 @@ public partial class MainWindow : Window
 
 
     private EyedropperOverlayWindow? eyedropperOverlayWindow;
-    private bool eyedropperOverlayWindowIsOpen = false;
     public async Task<Color?> ShowAndPickColor(Window owner)
     {
         var (capture, bounds, renderScaling) = EyedropperOverlayWindow.CaptureAllScreens(owner);
@@ -224,8 +223,6 @@ public partial class MainWindow : Window
         {
             eyedropperOverlayWindow.Closed -= OnClosed;
             tcs.TrySetResult(eyedropperOverlayWindow.Result);
-            eyedropperOverlayWindowIsOpen = false;
-            eyedropperOverlayWindow = null;
             capture.Dispose();
         }
 
@@ -244,10 +241,9 @@ public partial class MainWindow : Window
         if (Vm is null)
             return;
 
-        if (eyedropperOverlayWindowIsOpen)
+        if (eyedropperOverlayWindow != null && eyedropperOverlayWindow.IsVisible)
             return;
 
-        eyedropperOverlayWindowIsOpen = true;
         this.WindowState = WindowState.Minimized;
         await Task.Delay(200);
         var overlayResult = await ShowAndPickColor(this);
@@ -261,7 +257,8 @@ public partial class MainWindow : Window
 
             if (App.Settings.RestoreWindowAfterPick)
             {
-                Open();
+                this.WindowState = WindowState.Normal;
+                this.Focus();
             }
 
             if (App.Settings.AutoCopyOnPick)
@@ -303,6 +300,8 @@ public partial class MainWindow : Window
         var item = box.SelectedItem as ComboBoxItem;
         Vm.CopyFormat = (item?.Content?.ToString() ?? "rgb").ToLowerInvariant();
         latticeToggleButton.Content = (Vm.CopyFormat == "hex" ? '#' : 'ƒ');
+        latticeToggleButton.IsEnabled = Vm.CopyFormat != "rgb-565";
+        switchWithAlpha.IsEnabled = Vm.CopyFormat != "rgb-565";
         RefreshCopyText();
     }
     private void latticeToggleButton_Checked(object? sender, RoutedEventArgs e)

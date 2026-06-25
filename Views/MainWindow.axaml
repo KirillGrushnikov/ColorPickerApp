@@ -15,7 +15,7 @@
         Title="Color Picker Pro"
         CanResize="False"
         Width="920"
-        Height="640"
+        Height="660"
         WindowState="Normal"
         WindowStartupLocation="CenterScreen"
         RequestedThemeVariant="Dark"
@@ -228,8 +228,10 @@
                         <ComboBoxItem Content="hsv" />
                         <ComboBoxItem Content="normal" />
                         <ComboBoxItem Content="hex" />
+                        <ComboBoxItem Content="rgb-565" />
                     </ComboBox>
                     <ToggleSwitch Grid.Column="2"
+                                  Name="switchWithAlpha"
                                   IsChecked="{Binding CopyWithAlpha}"
                                   VerticalAlignment="Center"
                                   OnContent=""
@@ -356,7 +358,9 @@
                             </Grid>
 
                             <TextBlock Text="Hex" FontWeight="SemiBold" />
-                            <TextBox Text="{Binding Hex, Mode=TwoWay}" Watermark="#rrggbb" />
+                            <TextBox Text="{Binding Hex, Mode=TwoWay}" />
+                            <TextBlock Text="RGB-565" FontWeight="SemiBold" />
+                            <TextBox Text="{Binding RGB565, Mode=TwoWay}" />
                         </StackPanel>
                     </ScrollViewer>
                 </Border>

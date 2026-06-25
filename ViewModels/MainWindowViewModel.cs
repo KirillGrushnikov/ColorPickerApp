@@ -24,6 +24,7 @@ public class MainWindowViewModel : ViewModelBase
     private int _r;
     private int _g;
     private int _b;
+    private int _rgb565 = 0;
     private string _hex = "#000000";
     private string _copyFormat = "rgb";
     private int _copyFormatIndex = 0;
@@ -169,6 +170,22 @@ public class MainWindowViewModel : ViewModelBase
         }
     }
 
+    public int RGB565
+    {
+        get => _rgb565;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _rgb565, value);
+            byte r5 = (byte)((_rgb565 >> 11) & 0x1F);
+            byte g6 = (byte)((_rgb565 >> 5) & 0x3F);
+            byte b5 = (byte)(_rgb565 & 0x1F);
+
+            R = (byte)((r5 << 3) | (r5 >> 2));
+            G = (byte)((g6 << 2) | (g6 >> 4));
+            B = (byte)((b5 << 3) | (b5 >> 2));
+        }
+    }
+
     public int CopyFormatIndex
     {
         get => _copyFormatIndex;
@@ -214,6 +231,7 @@ public class MainWindowViewModel : ViewModelBase
             "hex" => CopyWithAlpha
                 ? $"#{(int)Math.Round(Alpha * 255):x2}{R:x2}{G:x2}{B:x2}"
                 : $"#{R:x2}{G:x2}{B:x2}",
+            "rgb-565" => $"{RGB565}",
             _ => CopyWithAlpha
                 ? $"rgba({R}, {G}, {B}, {Alpha:F2})"
                 : $"rgb({R}, {G}, {B})",
@@ -245,6 +263,7 @@ public class MainWindowViewModel : ViewModelBase
         _saturation = hsv.S;
         _value = hsv.V;
         _hex = $"#{_r:x2}{_g:x2}{_b:x2}";
+        _rgb565 = ((_r & 0xF8) << 8) | ((_g & 0xFC) << 3) | (_b >> 3);
         RaiseAll();
         _internalUpdate = false;
     }
@@ -262,6 +281,7 @@ public class MainWindowViewModel : ViewModelBase
         _g = color.G;
         _b = color.B;
         _hex = $"#{_r:x2}{_g:x2}{_b:x2}";
+        _rgb565 = ((_r & 0xF8) << 8) | ((_g & 0xFC) << 3) | (_b >> 3);
         RaiseAll();
         _internalUpdate = false;
     }
@@ -304,6 +324,7 @@ public class MainWindowViewModel : ViewModelBase
         this.RaisePropertyChanged(nameof(NormalG));
         this.RaisePropertyChanged(nameof(NormalB));
         this.RaisePropertyChanged(nameof(Hex));
+        this.RaisePropertyChanged(nameof(RGB565));
         this.RaisePropertyChanged(nameof(SelectedColor));
         this.RaisePropertyChanged(nameof(OpaqueColor));
         this.RaisePropertyChanged(nameof(SelectedBrush));
