@@ -117,20 +117,6 @@
 
 Требуется [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0).
 
-| Скрипт | Что делает |
-|---|---|
-| `!publish.bat` | Публикация в `publish\` (self‑contained + ReadyToRun) |
-| `publish-aot.bat` | Публикация Native AOT в `publish-aot\` — самый быстрый запуск. Нужна нагрузка Visual Studio «Разработка классических приложений на C++» |
-| `installer\create setup.iss` | Скрипт [Inno Setup](https://jrsoftware.org/isinfo.php): собирает установщик в `installer\Output\` (папка публикации задаётся в `SourcePath`) |
-| `release.bat` | `git add` → commit → push → GitHub Release с установщиком (нужен [GitHub CLI](https://cli.github.com/)) |
-
-Порядок выпуска новой версии:
-
-1. Поменять `MyAppVersion` в `installer\create setup.iss`.
-2. Запустить `publish-aot.bat` (или `!publish.bat`).
-3. Собрать установщик в Inno Setup.
-4. Описать изменения в `release-notes.md` и запустить `release.bat`.
-
 Стек: [Avalonia UI](https://avaloniaui.net/) 11, .NET 8, Win32 API (RegisterHotKey, GDI, низкоуровневый хук мыши).
 
 ## Лицензия
