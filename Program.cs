@@ -1,7 +1,6 @@
 ﻿using Avalonia;
-using ReactiveUI.Avalonia;
+using Avalonia.Media;
 using System;
-using System.Linq;
 
 namespace ColorPickerApp;
 
@@ -11,7 +10,15 @@ public static class StartupHelper
 
     public static void Initialize(string[] args)
     {
-        IsAutoStartMode = args.Contains("/auto") || args.Contains("-auto");
+        foreach (var arg in args)
+        {
+            if (string.Equals(arg, "/auto", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(arg, "-auto", StringComparison.OrdinalIgnoreCase))
+            {
+                IsAutoStartMode = true;
+                return;
+            }
+        }
     }
 }
 
@@ -25,6 +32,15 @@ sealed class Program
     {
         StartupHelper.Initialize(args);
 
+        // Программа уже запущена (например, свёрнута в трей) - просто показываем её окно,
+        // вместо холодного старта второй копии с ещё одним хуком и иконкой в трее.
+        if (!SingleInstance.TryAcquire())
+        {
+            if (!StartupHelper.IsAutoStartMode)
+                SingleInstance.ActivateExisting();
+            return;
+        }
+
         BuildAvaloniaApp()
             .StartWithClassicDesktopLifetime(args);
     }
@@ -33,7 +49,7 @@ sealed class Program
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
-            .WithInterFont()
-            .LogToTrace()
-            .UseReactiveUI();
+            // Системный шрифт Windows: не нужно грузить встроенный Inter (~1.9 МБ) при запуске
+            .With(new FontManagerOptions { DefaultFamilyName = "Segoe UI" })
+            .LogToTrace();
 }

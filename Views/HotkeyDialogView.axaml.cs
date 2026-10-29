@@ -1,62 +1,66 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using ColorPickerApp.Services;
 using ColorPickerApp.ViewModels;
-using Microsoft.Extensions.DependencyInjection;
-using ReactiveUI;
-using ReactiveUI.Avalonia;
 using System;
-using System.Reactive.Disposables;
-using System.Reactive.Disposables.Fluent;
 
 namespace ColorPickerApp.Views
 {
     public partial class HotkeyDialogView : Window
     {
+        private HotkeyDialogViewModel? _viewModel;
 
         public HotkeyDialogView()
         {
             InitializeComponent();
+            KeyDown += OnKeyDown;
+            // Tunnel: кнопки мыши ловим раньше, чем их получат кнопки диалога
+            AddHandler(PointerPressedEvent, OnPreviewPointerPressed, RoutingStrategies.Tunnel);
+        }
+
+        private void OnPreviewPointerPressed(object? sender, PointerPressedEventArgs e)
+        {
+            var props = e.GetCurrentPoint(this).Properties;
+            var button = props.IsXButton1Pressed ? "Mouse4"
+                : props.IsXButton2Pressed ? "Mouse5"
+                : props.IsMiddleButtonPressed ? "MouseMiddle"
+                : null;
+            if (button is null)
+                return;
+
+            (DataContext as HotkeyDialogViewModel)?.UpdateHotkeyFromMouse(e.KeyModifiers, button);
+            e.Handled = true;
+        }
+
+        protected override void OnOpened(EventArgs e)
+        {
+            base.OnOpened(e);
+
+            // Пока назначаем клавишу, глобальные хоткеи не должны срабатывать
+            if (App.Hotkeys is { } hotkeys)
+                hotkeys.IsSuspended = true;
+
+            _viewModel = DataContext as HotkeyDialogViewModel;
+            if (_viewModel != null)
+                _viewModel.CloseRequested += OnCloseRequested;
         }
 
         protected override void OnClosed(EventArgs e)
         {
             base.OnClosed(e);
-            var hotkeyService = App.ServiceProvider.GetRequiredService<GlobalHotkeyService>();
-            hotkeyService.Start();
+
+            if (_viewModel != null)
+                _viewModel.CloseRequested -= OnCloseRequested;
+
+            if (App.Hotkeys is { } hotkeys)
+                hotkeys.IsSuspended = false;
         }
 
-        protected override void OnLoaded(RoutedEventArgs e)
-        {
-            base.OnLoaded(e);
-
-            
-            var hotkeyService = App.ServiceProvider.GetRequiredService<GlobalHotkeyService>();
-            hotkeyService.Stop();
-
-            HotkeyDialogViewModel ViewModel = DataContext as HotkeyDialogViewModel;
-            this.KeyDown += OnKeyDown;
-            Disposable.Create(() => this.KeyDown -= OnKeyDown);
-
-
-            // При подтверждении закрываем окно с результатом
-            ViewModel?.ConfirmCommand.Subscribe(hotkey =>
-            {
-                Close(hotkey);
-            });
-
-            // При отмене закрываем с null
-            ViewModel?.CancelCommand.Subscribe(_ =>
-            {
-                Close(null);
-            });
-        }
+        private void OnCloseRequested(string? hotkey) => Close(hotkey);
 
         private void OnKeyDown(object? sender, KeyEventArgs e)
         {
-            HotkeyDialogViewModel ViewModel = DataContext as HotkeyDialogViewModel;
-            ViewModel?.UpdateHotkeyFromKeyDown(sender, e);
+            (DataContext as HotkeyDialogViewModel)?.UpdateHotkeyFromKeyDown(sender, e);
         }
     }
 }

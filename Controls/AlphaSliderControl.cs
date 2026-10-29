@@ -1,8 +1,10 @@
-using System;
+п»їusing System;
+using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 
 namespace ColorPickerApp.Controls;
 
@@ -14,16 +16,14 @@ public class AlphaSliderControl : Control
     public static readonly StyledProperty<double> AlphaProperty =
         AvaloniaProperty.Register<AlphaSliderControl, double>(nameof(Alpha), 1.0);
 
+    private static readonly IBrush IndicatorFill = new ImmutableSolidColorBrush(Color.FromArgb(90, 255, 255, 255));
+    private static readonly IPen IndicatorPen = new ImmutablePen(Brushes.White, 1.2);
+
     private bool _dragging;
 
     static AlphaSliderControl()
     {
         AffectsRender<AlphaSliderControl>(BaseColorProperty, AlphaProperty);
-    }
-
-    public AlphaSliderControl()
-    {
-        App.Settings.PropertyChanged += (s, e) => InvalidateVisual();
     }
 
     public Color BaseColor
@@ -38,16 +38,34 @@ public class AlphaSliderControl : Control
         set => SetValue(AlphaProperty, value);
     }
 
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        App.Settings.PropertyChanged += OnSettingsChanged;
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromVisualTree(e);
+        App.Settings.PropertyChanged -= OnSettingsChanged;
+    }
+
+    private void OnSettingsChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(AppSettingsStore.TransparentBackground1) or nameof(AppSettingsStore.TransparentBackground2))
+            InvalidateVisual();
+    }
+
     public override void Render(DrawingContext context)
     {
         base.Render(context);
 
-        // Используем границы как есть, без Ceiling
+        // РСЃРїРѕР»СЊР·СѓРµРј РіСЂР°РЅРёС†С‹ РєР°Рє РµСЃС‚СЊ, Р±РµР· Ceiling
         var bounds = Bounds;
         if (bounds.Width <= 0 || bounds.Height <= 0)
             return;
 
-        // Приводим к целым координатам для устранения субпиксельного дрожания
+        // РџСЂРёРІРѕРґРёРј Рє С†РµР»С‹Рј РєРѕРѕСЂРґРёРЅР°С‚Р°Рј РґР»СЏ СѓСЃС‚СЂР°РЅРµРЅРёСЏ СЃСѓР±РїРёРєСЃРµР»СЊРЅРѕРіРѕ РґСЂРѕР¶Р°РЅРёСЏ
         var rect = new Rect(
             0,
             0,
@@ -59,15 +77,20 @@ public class AlphaSliderControl : Control
         DrawAlphaIndicator(context, rect);
     }
 
-    private void DrawCheckerboard(DrawingContext context, Rect rect)
+    private static void DrawCheckerboard(DrawingContext context, Rect rect)
     {
-        // Фиксированный размер клетки в DIP, кратный целому числу
-        double cellSize = rect.Width / 3.0; // можно подобрать под дизайн
+        // Р¤РёРєСЃРёСЂРѕРІР°РЅРЅС‹Р№ СЂР°Р·РјРµСЂ РєР»РµС‚РєРё РІ DIP, РєСЂР°С‚РЅС‹Р№ С†РµР»РѕРјСѓ С‡РёСЃР»Сѓ
+        double cellSize = rect.Width / 3.0; // РјРѕР¶РЅРѕ РїРѕРґРѕР±СЂР°С‚СЊ РїРѕРґ РґРёР·Р°Р№РЅ
 
         var light = App.Settings.TransparentBackground1;
         var dark = App.Settings.TransparentBackground2;
 
-        // Рисуем только целое количество клеток, чтобы избежать обрезанных половинок
+        // РЎРІРµС‚Р»С‹Р№ С†РІРµС‚ - РѕРґРЅРѕР№ Р·Р°Р»РёРІРєРѕР№, СЃРІРµСЂС…Сѓ С‚РѕР»СЊРєРѕ С‚С‘РјРЅС‹Рµ РєР»РµС‚РєРё
+        context.DrawRectangle(light, null, rect);
+        if (light.Color == dark.Color)
+            return;
+
+        // Р РёСЃСѓРµРј С‚РѕР»СЊРєРѕ С†РµР»РѕРµ РєРѕР»РёС‡РµСЃС‚РІРѕ РєР»РµС‚РѕРє, С‡С‚РѕР±С‹ РёР·Р±РµР¶Р°С‚СЊ РѕР±СЂРµР·Р°РЅРЅС‹С… РїРѕР»РѕРІРёРЅРѕРє
         int cols = (int)Math.Ceiling(rect.Width / cellSize);
         int rows = (int)Math.Ceiling(rect.Height / cellSize);
 
@@ -75,19 +98,19 @@ public class AlphaSliderControl : Control
         {
             for (int col = 0; col < cols; col++)
             {
-                bool useDark = (row + col) % 2 == 0;
+                if ((row + col) % 2 != 0)
+                    continue;
+
                 var cellRect = new Rect(
                     rect.X + col * cellSize,
                     rect.Y + row * cellSize,
                     cellSize,
                     cellSize);
 
-                // Обрезаем последнюю клетку по границе контрола
+                // РћР±СЂРµР·Р°РµРј РїРѕСЃР»РµРґРЅСЋСЋ РєР»РµС‚РєСѓ РїРѕ РіСЂР°РЅРёС†Рµ РєРѕРЅС‚СЂРѕР»Р°
                 cellRect = cellRect.Intersect(rect);
                 if (cellRect.Width > 0 && cellRect.Height > 0)
-                {
-                    context.DrawRectangle(useDark ? dark : light, null, cellRect);
-                }
+                    context.DrawRectangle(dark, null, cellRect);
             }
         }
     }
@@ -115,15 +138,12 @@ public class AlphaSliderControl : Control
     {
         double y = rect.Y + (1 - ColorMath.Clamp01(Alpha)) * rect.Height;
 
-        // Рисуем два небольших круга по бокам для наглядности положения ползунка
+        // Р РёСЃСѓРµРј РґРІР° РЅРµР±РѕР»СЊС€РёС… РєСЂСѓРіР° РїРѕ Р±РѕРєР°Рј РґР»СЏ РЅР°РіР»СЏРґРЅРѕСЃС‚Рё РїРѕР»РѕР¶РµРЅРёСЏ РїРѕР»Р·СѓРЅРєР°
         var leftCenter = new Point(rect.X - 4, y);
         var rightCenter = new Point(rect.X + rect.Width + 4, y);
 
-        var fillBrush = new SolidColorBrush(Color.FromArgb(90, 255, 255, 255));
-        var pen = new Pen(Brushes.White, 1.2);
-
-        context.DrawEllipse(fillBrush, pen, leftCenter, 2, 2);
-        context.DrawEllipse(fillBrush, pen, rightCenter, 2, 2);
+        context.DrawEllipse(IndicatorFill, IndicatorPen, leftCenter, 2, 2);
+        context.DrawEllipse(IndicatorFill, IndicatorPen, rightCenter, 2, 2);
     }
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)
@@ -153,8 +173,8 @@ public class AlphaSliderControl : Control
         if (Bounds.Height <= 0)
             return;
 
-        double relativeY = (point.Y - Bounds.Y) / Bounds.Height;
+        // point СѓР¶Рµ РІ Р»РѕРєР°Р»СЊРЅС‹С… РєРѕРѕСЂРґРёРЅР°С‚Р°С… РєРѕРЅС‚СЂРѕР»Р° (СЂР°РЅСЊС€Рµ Р»РёС€РЅРёР№ СЂР°Р· РІС‹С‡РёС‚Р°Р»СЃСЏ Bounds.Y)
+        double relativeY = point.Y / Bounds.Height;
         Alpha = ColorMath.Clamp01(1 - relativeY);
-        InvalidateVisual();
     }
 }

@@ -4,6 +4,9 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using Avalonia.Media.Immutable;
+using Avalonia.Platform;
 
 namespace ColorPickerApp.Controls;
 
@@ -40,6 +43,43 @@ public class ColorWheelSvControl : Control
     private enum MarkerType { AnglePositive, AngleNegative, OppositeAngle }
     private MarkerType _draggedMarkerType;
     private double _initialHarmonyAngle;
+
+    // Кольцо оттенков рендерится один раз в битмап и пересоздаётся только при смене размера/масштаба.
+    // Раньше на каждый кадр (каждое движение мыши) рисовалось 720 линий с новыми Pen и Brush.
+    private WriteableBitmap? _hueRingBitmap;
+    private PixelSize _hueRingPixelSize;
+    private double _hueRingScaling;
+
+    private static readonly IBrush SvPointFill = new ImmutableSolidColorBrush(Color.FromArgb(90, 255, 255, 255));
+    private static readonly IPen SvPointPen = new ImmutablePen(Brushes.White, 2);
+    private static readonly IBrush MovableMarkerFill = new ImmutableSolidColorBrush(Color.FromArgb(180, 255, 255, 255));
+    private static readonly IBrush PrimaryMarkerFill = new ImmutableSolidColorBrush(Color.FromArgb(50, 255, 255, 255));
+    private static readonly IBrush FixedMarkerFill = new ImmutableSolidColorBrush(Color.FromArgb(180, 30, 30, 30));
+    private static readonly IPen WhiteMarkerPen = new ImmutablePen(Brushes.White, 2);
+    private static readonly IPen FixedMarkerPen = new ImmutablePen(new ImmutableSolidColorBrush(Color.FromRgb(70, 70, 70)), 2);
+    private static readonly IPen SvBorderPen = new ImmutablePen(new ImmutableSolidColorBrush(Color.FromArgb(70, 255, 255, 255)), 1);
+
+    private static readonly IBrush SvWhiteGradient = new LinearGradientBrush
+    {
+        StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
+        EndPoint = new RelativePoint(1, 0, RelativeUnit.Relative),
+        GradientStops = new GradientStops
+        {
+            new(Colors.White, 0),
+            new(Color.FromArgb(0, 255, 255, 255), 1),
+        },
+    };
+
+    private static readonly IBrush SvBlackGradient = new LinearGradientBrush
+    {
+        StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
+        EndPoint = new RelativePoint(0, 1, RelativeUnit.Relative),
+        GradientStops = new GradientStops
+        {
+            new(Color.FromArgb(0, 0, 0, 0), 0),
+            new(Colors.Black, 1),
+        },
+    };
 
     static ColorWheelSvControl()
     {
@@ -103,12 +143,7 @@ public class ColorWheelSvControl : Control
         var svPoint = new Point(
             squareRect.Left + Saturation * squareRect.Width,
             squareRect.Top + (1 - Value) * squareRect.Height);
-        context.DrawEllipse(
-            new SolidColorBrush(Color.FromArgb(90, 255, 255, 255)),
-            new Pen(Brushes.White, 2),
-            svPoint,
-            6,
-            6);
+        context.DrawEllipse(SvPointFill, SvPointPen, svPoint, 6, 6);
     }
 
     public IEnumerable<Color> GetHarmonyColors()
@@ -172,6 +207,21 @@ public class ColorWheelSvControl : Control
         {
             UpdateFromPoint(e.GetPosition(this), false);
         }
+    }
+
+    // Колесо мыши над кругом - быстрая смена тона: по 1°, с Shift - по 10°
+    protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
+    {
+        base.OnPointerWheelChanged(e);
+        var delta = e.Delta.Y != 0 ? e.Delta.Y : e.Delta.X;
+        if (delta == 0)
+            return;
+
+        var step = e.KeyModifiers.HasFlag(KeyModifiers.Shift) ? 10 : 1;
+        var hue = (Hue + (delta > 0 ? step : -step)) % 360;
+        if (hue < 0) hue += 360;
+        Hue = hue;
+        e.Handled = true;
     }
 
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
@@ -382,20 +432,68 @@ public class ColorWheelSvControl : Control
         }
     }
 
-    private static void DrawHueRing(DrawingContext context, Point center, double outerRadius, double thickness)
+    private void DrawHueRing(DrawingContext context, Point center, double outerRadius, double thickness)
     {
-        const int segments = 720;
-        var penThickness = 2;
-        for (var i = 0; i < segments; i++)
+        var scaling = TopLevel.GetTopLevel(this)?.RenderScaling ?? 1.0;
+        var size = Bounds.Size;
+        var pixelSize = new PixelSize(
+            Math.Max(1, (int)Math.Ceiling(size.Width * scaling)),
+            Math.Max(1, (int)Math.Ceiling(size.Height * scaling)));
+
+        if (_hueRingBitmap is null || _hueRingPixelSize != pixelSize || _hueRingScaling != scaling)
         {
-            var h = i * (360.0 / segments);
-            var a1 = (h - 90) * Math.PI / 180.0;
-            var a2 = ((h + 360.0 / segments) - 90) * Math.PI / 180.0;
-            var p1 = new Point(center.X + Math.Cos(a1) * (outerRadius - thickness), center.Y + Math.Sin(a1) * (outerRadius - thickness));
-            var p2 = new Point(center.X + Math.Cos(a2) * (outerRadius), center.Y + Math.Sin(a2) * (outerRadius));
-            var color = ColorMath.FromHsv(h, 1, 1);
-            context.DrawLine(new Pen(new SolidColorBrush(color), penThickness), p1, p2);
+            _hueRingBitmap?.Dispose();
+            _hueRingBitmap = CreateHueRingBitmap(pixelSize, scaling, center, outerRadius, thickness);
+            _hueRingPixelSize = pixelSize;
+            _hueRingScaling = scaling;
         }
+
+        context.DrawImage(_hueRingBitmap, new Rect(0, 0, pixelSize.Width / scaling, pixelSize.Height / scaling));
+    }
+
+    private static unsafe WriteableBitmap CreateHueRingBitmap(PixelSize pixelSize, double scaling, Point centerDip, double outerRadiusDip, double thicknessDip)
+    {
+        var bitmap = new WriteableBitmap(pixelSize, new Vector(96, 96), PixelFormat.Bgra8888);
+
+        var cx = centerDip.X * scaling;
+        var cy = centerDip.Y * scaling;
+        var outer = outerRadiusDip * scaling;
+        var inner = (outerRadiusDip - thicknessDip) * scaling;
+
+        using var frame = bitmap.Lock();
+        var basePtr = (byte*)frame.Address;
+        for (var y = 0; y < pixelSize.Height; y++)
+        {
+            var row = (uint*)(basePtr + y * frame.RowBytes);
+            var dy = y + 0.5 - cy;
+            for (var x = 0; x < pixelSize.Width; x++)
+            {
+                var dx = x + 0.5 - cx;
+                var distance = Math.Sqrt(dx * dx + dy * dy);
+
+                // Сглаживание краёв кольца: доля покрытия пикселя
+                var coverage = Math.Clamp(outer - distance + 0.5, 0, 1) * Math.Clamp(distance - inner + 0.5, 0, 1);
+                if (coverage <= 0)
+                {
+                    row[x] = 0;
+                    continue;
+                }
+
+                // Та же формула угла, что и в UpdateFromPoint: 0° сверху, по часовой стрелке
+                var hue = Math.Atan2(dy, dx) * 180 / Math.PI + 90;
+                if (hue < 0) hue += 360;
+                var color = ColorMath.FromHsv(hue, 1, 1);
+
+                // Премультиплицированный BGRA
+                var a = (uint)Math.Round(coverage * 255);
+                var r = color.R * a / 255;
+                var g = color.G * a / 255;
+                var b = color.B * a / 255;
+                row[x] = (a << 24) | (r << 16) | (g << 8) | b;
+            }
+        }
+
+        return bitmap;
     }
 
     private void DrawHueMarker(DrawingContext context, Point center, double outerRadius, double hue, bool isPrimary, bool isMovable)
@@ -408,27 +506,22 @@ public class ColorWheelSvControl : Control
 
         double radius = isMovable ? 6 : 4;
         IBrush fill;
-        Pen pen;
+        IPen pen;
 
         if (isMovable)
         {
-            fill = new SolidColorBrush(Color.FromArgb(180, 255, 255, 255));
-            pen = new Pen(Brushes.White, 2);
+            fill = MovableMarkerFill;
+            pen = WhiteMarkerPen;
+        }
+        else if (isPrimary)
+        {
+            fill = PrimaryMarkerFill;
+            pen = WhiteMarkerPen;
         }
         else
         {
-            if (isPrimary)
-            {
-                fill = new SolidColorBrush(Color.FromArgb(50, 255, 255, 255));
-                pen = new Pen(Brushes.White, 2);
-            }
-            else
-            {
-                fill = new SolidColorBrush(Color.FromArgb(180, 30, 30, 30));
-                pen = new Pen(new SolidColorBrush(Color.FromRgb(70, 70, 70)), 2);
-                //var markerColor = ColorMath.FromHsv(hue, Saturation, Value);
-                //pen = new Pen(new SolidColorBrush(markerColor), 2);
-            }
+            fill = FixedMarkerFill;
+            pen = FixedMarkerPen;
         }
 
         context.DrawEllipse(fill, pen, point, radius, radius);
@@ -480,33 +573,9 @@ public class ColorWheelSvControl : Control
     private void DrawSvSquare(DrawingContext context, Rect rect)
     {
         var hueColor = ColorMath.FromHsv(Hue, 1, 1);
-        context.DrawRectangle(new SolidColorBrush(hueColor), null, rect);
-        context.DrawRectangle(
-            new LinearGradientBrush
-            {
-                StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
-                EndPoint = new RelativePoint(1, 0, RelativeUnit.Relative),
-                GradientStops = new GradientStops
-                {
-                    new(Colors.White, 0),
-                    new(Color.FromArgb(0, 255, 255, 255), 1),
-                },
-            },
-            null,
-            rect);
-        context.DrawRectangle(
-            new LinearGradientBrush
-            {
-                StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
-                EndPoint = new RelativePoint(0, 1, RelativeUnit.Relative),
-                GradientStops = new GradientStops
-                {
-                    new(Color.FromArgb(0, 0, 0, 0), 0),
-                    new(Colors.Black, 1),
-                },
-            },
-            null,
-            rect);
-        context.DrawRectangle(null, new Pen(new SolidColorBrush(Color.FromArgb(70, 255, 255, 255)), 1), rect);
+        context.DrawRectangle(new ImmutableSolidColorBrush(hueColor), null, rect);
+        context.DrawRectangle(SvWhiteGradient, null, rect);
+        context.DrawRectangle(SvBlackGradient, null, rect);
+        context.DrawRectangle(null, SvBorderPen, rect);
     }
 }

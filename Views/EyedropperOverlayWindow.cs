@@ -1,217 +1,301 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Avalonia.Media.Immutable;
 using Avalonia.Platform;
-using Splat.ModeDetection;
+using Avalonia.Threading;
 using System;
-using System.Drawing.Imaging;
-using System.IO;
+using System.Globalization;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using AImage = Avalonia.Controls.Image;
-using APoint = Avalonia.Point;
-using DrawingBitmap = System.Drawing.Bitmap;
 
 namespace ColorPickerApp.Views;
 
-public class EyedropperOverlayWindow : Window
+/// <summary>
+/// Полноэкранная пипетка поверх снимка всех мониторов.
+/// ЛКМ / Enter / пробел - выбрать; ПКМ / Esc - отмена; колесо, + и - - масштаб лупы;
+/// стрелки - сдвиг на 1 пиксель (с Shift - на 10).
+/// </summary>
+public sealed class EyedropperOverlayWindow : Window
 {
-    private readonly DrawingBitmap _capture;
-    private readonly PixelRect _virtualBounds;
-    private readonly double _renderScaling;
-    private readonly AImage _image;
+    private readonly ScreenCapture _capture;
+    private readonly WriteableBitmap _screenBitmap;
     private readonly OverlayControl _overlay;
 
-    private Avalonia.Media.Color? _result;
+    private Color? _result;
+    private int _pixelX = -1;
+    private int _pixelY = -1;
 
-    public EyedropperOverlayWindow(DrawingBitmap capture, PixelRect virtualBounds, double renderScaling)
+    private EyedropperOverlayWindow(ScreenCapture capture, double renderScaling)
     {
         _capture = capture;
-        _virtualBounds = virtualBounds;
-        _renderScaling = Math.Max(0.1, renderScaling);
+        var scaling = Math.Max(0.1, renderScaling);
 
         SystemDecorations = SystemDecorations.None;
         CanResize = false;
         ShowInTaskbar = false;
         Topmost = true;
         WindowState = WindowState.Normal;
-        
 
-        Position = new PixelPoint(virtualBounds.X, virtualBounds.Y);
-
-        Width = virtualBounds.Width / _renderScaling;
-        Height = virtualBounds.Height / _renderScaling;
+        Position = new PixelPoint(capture.X, capture.Y);
+        Width = capture.Width / scaling;
+        Height = capture.Height / scaling;
         Cursor = new Cursor(StandardCursorType.Cross);
         Background = Brushes.Transparent;
 
-        _image = new AImage
-        {
-            Stretch = Stretch.Fill,
-            Source = ToAvaloniaBitmap(capture),
-        };
-
-
-        _overlay = new OverlayControl(() => _lastPoint, GetPixelColorAt);
+        _screenBitmap = capture.ToBitmap();
+        _overlay = new OverlayControl(capture, App.Settings.EyedropperZoomIndex);
 
         Content = new Grid
         {
             Children =
             {
-                _image,
+                new Image { Stretch = Stretch.Fill, Source = _screenBitmap },
                 _overlay,
             },
         };
+
+        // Tunnel: стрелки и Enter получаем раньше, чем их заберёт навигация фокусом
+        AddHandler(KeyDownEvent, OnPreviewKeyDown, RoutingStrategies.Tunnel);
     }
 
-    
+    /// <summary>Делает снимок экранов, показывает оверлей и ждёт выбора. null - отмена.</summary>
+    public static async Task<Color?> PickAsync(Window owner)
+    {
+        var capture = ScreenCapture.CaptureAllScreens(owner, out var scaling);
+        var window = new EyedropperOverlayWindow(capture, scaling);
 
-    private APoint _lastPoint;
+        var tcs = new TaskCompletionSource<Color?>();
+        window.Closed += (_, _) => tcs.TrySetResult(window._result);
+        window.Show();
 
-    public Avalonia.Media.Color? Result => _result;
+        var result = await tcs.Task;
+        await Task.Delay(50);
+        return result;
+    }
 
-    private int _lastCaptureX = -1, _lastCaptureY = -1;
+    protected override void OnOpened(EventArgs e)
+    {
+        base.OnOpened(e);
+        Activate(); // чтобы клавиатура работала сразу
+
+        // Лупа сразу у курсора (а не в углу экрана до первого движения мыши)
+        Dispatcher.UIThread.Post(InitFromCursor, DispatcherPriority.Loaded);
+    }
+
+    private void InitFromCursor()
+    {
+        if (_pixelX >= 0 || GetCursorPos(out var cursor) == 0)
+            return;
+
+        _pixelX = Math.Clamp(cursor.X - _capture.X, 0, _capture.Width - 1);
+        _pixelY = Math.Clamp(cursor.Y - _capture.Y, 0, _capture.Height - 1);
+        var (dipX, dipY) = ToDip(_pixelX, _pixelY);
+        _overlay.UpdateCenter(_pixelX, _pixelY, dipX, dipY);
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        base.OnClosed(e);
+        _screenBitmap.Dispose();
+        App.Settings.EyedropperZoomIndex = _overlay.ZoomIndex;
+        App.Settings.Save();
+    }
 
     protected override void OnPointerMoved(PointerEventArgs e)
     {
         base.OnPointerMoved(e);
-        _lastPoint = e.GetPosition(this);
-        var (captureX, captureY) = GetCaptureCoords(_lastPoint);
-
-
-        _overlay.UpdateCenter(captureX, captureY, _lastPoint.X, _lastPoint.Y, this);
-        _overlay.InvalidateVisual();
+        var point = e.GetPosition(this);
+        (_pixelX, _pixelY) = ToCapturePixel(point);
+        _overlay.UpdateCenter(_pixelX, _pixelY, point.X, point.Y);
     }
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
-        var pointDip = e.GetPosition(this);
-        var (x, y) = GetCaptureCoords(pointDip);
-        if (x != -1 && y != -1)
-            _result = GetPixelColorAt(new Point(x, y));
+        var props = e.GetCurrentPoint(this).Properties;
+
+        if (props.IsRightButtonPressed)
+        {
+            Cancel();
+        }
+        else if (props.IsLeftButtonPressed)
+        {
+            var (x, y) = ToCapturePixel(e.GetPosition(this));
+            Pick(x, y);
+        }
+
+        e.Handled = true;
+    }
+
+    protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
+    {
+        base.OnPointerWheelChanged(e);
+        if (e.Delta.Y != 0)
+            _overlay.Zoom(e.Delta.Y > 0 ? +1 : -1);
+        e.Handled = true;
+    }
+
+    private void OnPreviewKeyDown(object? sender, KeyEventArgs e)
+    {
+        var step = e.KeyModifiers.HasFlag(KeyModifiers.Shift) ? 10 : 1;
+        switch (e.Key)
+        {
+            case Key.Escape:
+                Cancel();
+                break;
+            case Key.Enter:
+            case Key.Space:
+                if (_pixelX >= 0)
+                    Pick(_pixelX, _pixelY);
+                break;
+            case Key.Left:
+                MoveBy(-step, 0);
+                break;
+            case Key.Right:
+                MoveBy(step, 0);
+                break;
+            case Key.Up:
+                MoveBy(0, -step);
+                break;
+            case Key.Down:
+                MoveBy(0, step);
+                break;
+            case Key.OemPlus:
+            case Key.Add:
+                _overlay.Zoom(+1);
+                break;
+            case Key.OemMinus:
+            case Key.Subtract:
+                _overlay.Zoom(-1);
+                break;
+            default:
+                return;
+        }
+
+        e.Handled = true;
+    }
+
+    private void Pick(int x, int y)
+    {
+        _result = _capture.GetPixel(x, y);
         Close();
     }
 
-    protected override void OnKeyDown(KeyEventArgs e)
+    private void Cancel()
     {
-        if (e.Key == Key.Escape)
-        {
-            _result = null;
-            Close();
-            return;
-        }
-        base.OnKeyDown(e);
+        _result = null;
+        Close();
     }
 
-    private (int x, int y) GetCaptureCoords(APoint pointDip)
+    /// <summary>Сдвигает курсор ровно на N пикселей экрана (а не DIP) - для точного попадания.</summary>
+    private void MoveBy(int dx, int dy)
     {
-        // pointDip.X/Y в DIP, Bounds.Width/Height в DIP, _capture.Width/Height в пикселях
-        try
+        if (_pixelX < 0)
         {
-            double scaleX = _capture.Width / Bounds.Width;
-            double scaleY = _capture.Height / Bounds.Height;
-            int x = (int)Math.Clamp(pointDip.X * scaleX, 0, _capture.Width - 1);
-            int y = (int)Math.Clamp(pointDip.Y * scaleY, 0, _capture.Height - 1);
-            return (x, y);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.Message);
-            Console.WriteLine(ex.StackTrace);
-            return (-1, -1);
-        }
-    }
-
-    private Avalonia.Media.Color GetPixelColorAt(APoint point)
-    {
-        var x = (int)Math.Clamp(point.X, 0, _capture.Width - 1);
-        var y = (int)Math.Clamp(point.Y, 0, _capture.Height - 1);
-        var c = _capture.GetPixel(x, y);
-        return Avalonia.Media.Color.FromArgb(c.A, c.R, c.G, c.B);
-    }
-
-    public static (DrawingBitmap Bitmap, PixelRect Bounds, double RenderScaling) CaptureAllScreens(Window owner)
-    {
-        var screens = owner.Screens?.All;
-        if (screens == null || screens.Count == 0)
-            throw new InvalidOperationException("No screens available.");
-
-        var minX = int.MaxValue;
-        var minY = int.MaxValue;
-        var maxX = int.MinValue;
-        var maxY = int.MinValue;
-        var maxRenderScaling = owner.RenderScaling;
-        foreach (var screen in screens)
-        {
-            var b = screen.Bounds;
-            if (b.X < minX) minX = b.X;
-            if (b.Y < minY) minY = b.Y;
-            if (b.Right > maxX) maxX = b.Right;
-            if (b.Bottom > maxY) maxY = b.Bottom;
-            if(screen.Scaling > maxRenderScaling) maxRenderScaling = screen.Scaling;
+            // Курсор ещё не двигали - берём центр
+            _pixelX = _capture.Width / 2;
+            _pixelY = _capture.Height / 2;
         }
 
-        var width = maxX - minX;
-        var height = maxY - minY;
-        var bitmap = new DrawingBitmap(width, height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-        using var graphics = System.Drawing.Graphics.FromImage(bitmap);
-        graphics.CopyFromScreen(minX, minY, 0, 0, new System.Drawing.Size(width, height), System.Drawing.CopyPixelOperation.SourceCopy);
-        return (bitmap, new PixelRect(minX, minY, width, height), maxRenderScaling);
+        _pixelX = Math.Clamp(_pixelX + dx, 0, _capture.Width - 1);
+        _pixelY = Math.Clamp(_pixelY + dy, 0, _capture.Height - 1);
+        SetCursorPos(_capture.X + _pixelX, _capture.Y + _pixelY);
+
+        var (dipX, dipY) = ToDip(_pixelX, _pixelY);
+        _overlay.UpdateCenter(_pixelX, _pixelY, dipX, dipY);
     }
 
-    private static Avalonia.Media.Imaging.Bitmap ToAvaloniaBitmap(DrawingBitmap bitmap)
+    // DIP окна -> пиксель снимка
+    private (int X, int Y) ToCapturePixel(Point pointDip)
     {
-        using var ms = new MemoryStream();
-        bitmap.Save(ms, ImageFormat.Png);
-        ms.Seek(0, SeekOrigin.Begin);
-        return new Avalonia.Media.Imaging.Bitmap(ms);
+        var width = Bounds.Width;
+        var height = Bounds.Height;
+        if (width <= 0 || height <= 0)
+            return (0, 0);
+
+        // +1e-4: после SetCursorPos координата в DIP может оказаться чуть меньше целого пикселя
+        var x = (int)Math.Floor(pointDip.X * _capture.Width / width + 1e-4);
+        var y = (int)Math.Floor(pointDip.Y * _capture.Height / height + 1e-4);
+        return (Math.Clamp(x, 0, _capture.Width - 1), Math.Clamp(y, 0, _capture.Height - 1));
     }
 
-    private class OverlayControl : Control
+    private (double X, double Y) ToDip(int pixelX, int pixelY)
     {
-        public OverlayControl(
-            Func<APoint> currentPointProvider,
-            Func<APoint, Avalonia.Media.Color> colorAt) : base()
-        {
-            _currentPointProvider = currentPointProvider;
-            _colorAt = colorAt;
-            RenderOptions.SetBitmapInterpolationMode(this, BitmapInterpolationMode.None);
-        }
+        var scaleX = Bounds.Width > 0 ? Bounds.Width / _capture.Width : 1;
+        var scaleY = Bounds.Height > 0 ? Bounds.Height / _capture.Height : 1;
+        return (pixelX * scaleX, pixelY * scaleY);
+    }
 
-        Func<APoint> _currentPointProvider;
-        Func<APoint, Avalonia.Media.Color> _colorAt;
+    [StructLayout(LayoutKind.Sequential)]
+    private struct POINT
+    {
+        public int X;
+        public int Y;
+    }
+
+    [DllImport("user32.dll")]
+    private static extern int SetCursorPos(int x, int y);
+
+    [DllImport("user32.dll")]
+    private static extern int GetCursorPos(out POINT point);
+
+    private sealed class OverlayControl : Control
+    {
+        // Размер одной ячейки лупы в DIP; лупа всегда около 150 DIP, меняется число ячеек
+        private static readonly int[] ZoomLevels = { 3, 5, 7, 10, 15, 21, 30 };
+        private const double TargetLoupeSize = 150;
+        private const double FrameOffset = 3;
+
+        private static readonly IPen OuterFramePen = new ImmutablePen(Brushes.Black, 4);
+        private static readonly IPen InnerFramePen = new ImmutablePen(Brushes.White, 2);
+        private static readonly IPen CenterOuterPen = new ImmutablePen(Brushes.White, 2);
+        private static readonly IPen CenterInnerPen = new ImmutablePen(Brushes.Black, 1);
+        private static readonly Typeface TextTypeface = new("Segoe UI");
+        private static readonly Typeface HintTypeface = new("Segoe UI");
+
+        private readonly ScreenCapture _capture;
+        private WriteableBitmap? _loupe;
+        private int _loupeCells;
 
         private int _centerX, _centerY;
         private double _mouseDipX, _mouseDipY;
 
-        private const int SamplesPerEdge = 50; // количество сегментов на сторону рамки
-
-        private Avalonia.Media.Color GetAverageColor(APoint center, int radius = 1)
+        public OverlayControl(ScreenCapture capture, int zoomIndex)
         {
-            int r = 0, g = 0, b = 0, a = 0;
-            int count = 0;
-            for (int dy = -radius; dy <= radius; dy++)
-            {
-                for (int dx = -radius; dx <= radius; dx++)
-                {
-                    var c = _colorAt(new APoint(center.X + dx, center.Y + dy));
-                    r += c.R;
-                    g += c.G;
-                    b += c.B;
-                    a += c.A;
-                    count++;
-                }
-            }
-            if (count == 0) return Colors.Black;
-            return Avalonia.Media.Color.FromArgb(
-                (byte)(a / count),
-                (byte)(r / count),
-                (byte)(g / count),
-                (byte)(b / count));
+            _capture = capture;
+            ZoomIndex = Math.Clamp(zoomIndex, 0, ZoomLevels.Length - 1);
+            RenderOptions.SetBitmapInterpolationMode(this, BitmapInterpolationMode.None);
         }
 
-        public void UpdateCenter(int centerX, int centerY, double mouseDipX, double mouseDipY, Control? owner = null)
+        public int ZoomIndex { get; private set; }
+
+        private int CellSize => ZoomLevels[ZoomIndex];
+
+        /// <summary>Нечётное число ячеек на сторону, чтобы был центральный пиксель.</summary>
+        private int CellsPerSide
+        {
+            get
+            {
+                var cells = (int)Math.Round(TargetLoupeSize / CellSize);
+                if (cells % 2 == 0) cells++;
+                return Math.Max(5, cells);
+            }
+        }
+
+        public void Zoom(int direction)
+        {
+            var index = Math.Clamp(ZoomIndex + direction, 0, ZoomLevels.Length - 1);
+            if (index == ZoomIndex)
+                return;
+            ZoomIndex = index;
+            InvalidateVisual();
+        }
+
+        public void UpdateCenter(int centerX, int centerY, double mouseDipX, double mouseDipY)
         {
             _centerX = centerX;
             _centerY = centerY;
@@ -226,104 +310,106 @@ public class EyedropperOverlayWindow : Window
             return brightness > 128 ? Colors.Black : Colors.White;
         }
 
+        private Color GetAverageColor(int centerX, int centerY, int radius)
+        {
+            int r = 0, g = 0, b = 0, count = 0;
+            for (int dy = -radius; dy <= radius; dy++)
+            {
+                for (int dx = -radius; dx <= radius; dx++)
+                {
+                    var c = _capture.GetPixel(centerX + dx, centerY + dy);
+                    r += c.R;
+                    g += c.G;
+                    b += c.B;
+                    count++;
+                }
+            }
+            return Color.FromRgb((byte)(r / count), (byte)(g / count), (byte)(b / count));
+        }
 
-        private WriteableBitmap? _cachedBitmap;
-        private int _cachedSize = -1;
+        private unsafe void FillLoupe(int cells)
+        {
+            if (_loupe is null || _loupeCells != cells)
+            {
+                _loupe?.Dispose();
+                _loupe = new WriteableBitmap(new PixelSize(cells, cells), new Vector(96, 96), PixelFormat.Bgra8888);
+                _loupeCells = cells;
+            }
+
+            var half = cells / 2;
+            using var frame = _loupe.Lock();
+            var basePtr = (byte*)frame.Address;
+            for (int row = 0; row < cells; row++)
+            {
+                var dst = (uint*)(basePtr + row * frame.RowBytes);
+                int sy = _centerY + row - half;
+                for (int col = 0; col < cells; col++)
+                    dst[col] = _capture.GetArgb(_centerX + col - half, sy); // BGRA в памяти = ARGB в uint
+            }
+        }
 
         public override void Render(DrawingContext context)
         {
             base.Render(context);
-            var p = new Point(_centerX, _centerY);
-            var centerColor = _colorAt(p);
-            var contrastCenter = GetContrastColor(centerColor);
 
-            const int sample = 7;                // радиус в пикселях исходного изображения
-            const int cellSizePx = 10;           // размер одной ячейки в увеличенной лупе (пикселей на экране)
-            int cellsPerSide = sample * 2 + 1;   // 15
-            double actualSize = cellsPerSide * cellSizePx; // 150 пикселей
+            var cells = CellsPerSide;
+            var cellSize = CellSize;
+            var loupeSize = (double)cells * cellSize;
+            var half = cells / 2;
+            var centerColor = _capture.GetPixel(_centerX, _centerY);
 
             // Позиционирование лупы (чтобы не вылезала за границы окна)
             double boxX = _mouseDipX + 20;
             double boxY = _mouseDipY + 20;
-            if (boxX + actualSize > Bounds.Width) boxX = _mouseDipX - actualSize - 20;
-            if (boxY + actualSize > Bounds.Height) boxY = _mouseDipY - actualSize - 20;
+            if (boxX + loupeSize > Bounds.Width) boxX = _mouseDipX - loupeSize - 20;
+            if (boxY + loupeSize + 44 > Bounds.Height) boxY = _mouseDipY - loupeSize - 64;
 
-            double boxXM = _centerX;
-            double boxYM = _centerY;
-            if (boxX + actualSize > Bounds.Width) boxXM = _centerX - actualSize;
-            if (boxY + actualSize > Bounds.Height) boxYM = _centerY - actualSize;
+            // 1. Увеличенная область
+            FillLoupe(cells);
+            context.DrawImage(_loupe!, new Rect(boxX, boxY, loupeSize, loupeSize));
 
-            // ---- 1. Отрисовка увеличенной области через WriteableBitmap (без зазоров) ----
-            // Пересоздаём битмап, только если изменился размер (не обязательно, но для производительности)
-            if (_cachedBitmap == null || _cachedSize != cellsPerSide)
-            {
-                _cachedBitmap = new WriteableBitmap(new PixelSize(cellsPerSide, cellsPerSide), new Vector(96, 96), Avalonia.Platform.PixelFormat.Bgra8888);
-                _cachedSize = cellsPerSide;
-            }
+            // 2. Рамка
+            var borderRect = new Rect(boxX - FrameOffset, boxY - FrameOffset, loupeSize + 2 * FrameOffset, loupeSize + 2 * FrameOffset);
+            context.DrawRectangle(null, OuterFramePen, borderRect);
+            context.DrawRectangle(null, InnerFramePen, borderRect);
 
-            using (var fb = _cachedBitmap.Lock())
-            {
-                unsafe
-                {
-                    var ptr = (byte*)fb.Address;
-                    int stride = fb.RowBytes;
-                    for (int y = -sample; y <= sample; y++)
-                    {
-                        byte* row = ptr + (y + sample) * stride;
-                        for (int x = -sample; x <= sample; x++)
-                        {
-                            var c = _colorAt(new APoint(_centerX + x, _centerY + y));
-                            int idx = (x + sample) * 4;
-                            row[idx] = c.B;     // BGRA порядок
-                            row[idx + 1] = c.G;
-                            row[idx + 2] = c.R;
-                            row[idx + 3] = c.A;
-                        }
-                    }
-                }
-            }
+            // 3. Центральный пиксель
+            var centerRect = new Rect(boxX + half * cellSize, boxY + half * cellSize, cellSize, cellSize);
+            context.DrawRectangle(null, CenterOuterPen, centerRect.Inflate(1));
+            context.DrawRectangle(null, CenterInnerPen, centerRect);
 
-            context.DrawImage(_cachedBitmap, new Rect(boxX, boxY, actualSize, actualSize));
-
-            // Углы рамки
-            double offset = 3;
-            var borderRect = new Rect(boxX - offset, boxY - offset, actualSize + 2 * offset, actualSize + 2 * offset);
-            context.DrawRectangle(null, new Pen(Brushes.Black, 4), borderRect);
-            context.DrawRectangle(null, new Pen(Brushes.White, 2), borderRect);
-
-
-            // Контрастный цвет левого нижнего угла (для фона текста)
-            var bottomLeft = new APoint(boxX - offset, boxY + actualSize + offset);
-            var avgBL = GetAverageColor(bottomLeft, radius: 1);
-            var contrastBL = GetContrastColor(avgBL);
-
-            // Фон текста и цвет текста на основе левого нижнего угла
-            var textBgColor = contrastBL;
+            // 4. Подпись: hex и увеличение; фон контрастен экрану под левым нижним углом лупы
+            var physicalPerDip = Bounds.Width > 0 ? _capture.Width / Bounds.Width : 1;
+            var scaleY = Bounds.Height > 0 ? _capture.Height / Bounds.Height : 1;
+            var underText = GetAverageColor(
+                (int)((boxX - FrameOffset) * physicalPerDip),
+                (int)((boxY + loupeSize + FrameOffset) * scaleY),
+                radius: 1);
+            var textBgColor = GetContrastColor(underText);
             var textFgColor = GetContrastColor(textBgColor);
+            var textBrush = new ImmutableSolidColorBrush(textFgColor);
 
-            // Центральный квадратик
-            var centerRect = new Rect(boxX + sample * cellSizePx, boxY + sample * cellSizePx, cellSizePx, cellSizePx);
-            context.DrawRectangle(null, new Pen(Brushes.White, 2), centerRect);
-            context.DrawRectangle(null, new Pen(Brushes.Black, 1),
-                new Rect(centerRect.X + 1, centerRect.Y + 1, centerRect.Width - 2, centerRect.Height - 2));
+            // Во сколько раз один пиксель экрана больше своего реального размера
+            var magnification = cellSize * physicalPerDip;
+            var caption = string.Format(CultureInfo.InvariantCulture, "#{0:X2}{1:X2}{2:X2}   ×{3:0}",
+                centerColor.R, centerColor.G, centerColor.B, magnification);
 
-            // Текст с фоном от левого нижнего угла
-            string hex = $"#{centerColor.R:X2}{centerColor.G:X2}{centerColor.B:X2}";
-            var text = new FormattedText(
-                hex,
-                System.Globalization.CultureInfo.InvariantCulture,
-                FlowDirection.LeftToRight,
-                new Typeface("Inter"),
-                14,
-                new SolidColorBrush(textFgColor));
+            var text = new FormattedText(caption, CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
+                TextTypeface, 14, textBrush);
+            var hint = new FormattedText("колесо - масштаб · стрелки - 1 px · ПКМ/Esc - отмена",
+                CultureInfo.InvariantCulture, FlowDirection.LeftToRight, HintTypeface, 11, textBrush);
 
-            var textPosition = new APoint(boxX, boxY + actualSize + 8);
-            double textWidth = text.Width;
-            double textHeight = text.Height;
-            var backgroundRect = new Rect(textPosition.X - 2, textPosition.Y - 2, textWidth + 4, textHeight + 4);
+            var textPosition = new Point(boxX, boxY + loupeSize + 8);
+            var hintPosition = new Point(boxX, textPosition.Y + text.Height + 2);
+            var backgroundRect = new Rect(
+                textPosition.X - 3,
+                textPosition.Y - 2,
+                Math.Max(text.Width, hint.Width) + 6,
+                text.Height + hint.Height + 6);
 
-            context.DrawRectangle(new SolidColorBrush(textBgColor), null, backgroundRect);
+            context.DrawRectangle(new ImmutableSolidColorBrush(textBgColor), null, backgroundRect);
             context.DrawText(text, textPosition);
+            context.DrawText(hint, hintPosition);
         }
     }
 }

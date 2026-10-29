@@ -1,44 +1,69 @@
 ﻿using Microsoft.Win32;
 using System;
-using System.Diagnostics;
 using System.IO;
-using System.Reflection;
-using WindowsShortcutFactory;
 
+namespace ColorPickerApp;
+
+/// <summary>
+/// Автозапуск через HKCU\Software\Microsoft\Windows\CurrentVersion\Run.
+/// Раньше создавался .lnk через COM (пакет WindowsShortcutFactory) - это лишняя зависимость
+/// и COM-интероп, несовместимый с Native AOT.
+/// </summary>
 public static class StartupManager
 {
-    private static readonly string AppName = "Color Picker Pro";
+    private const string AppName = "Color Picker Pro";
+    private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
 
-    public static void AddToStartupViaShortcut()
+    public static void Enable()
     {
-        string startupFolder = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
-        string shortcutPath = Path.Combine(startupFolder, $"{AppName}.lnk");
+        if (!OperatingSystem.IsWindows())
+            return;
 
-        if (!File.Exists(shortcutPath))
+        try
         {
-            CreateShortcut(shortcutPath, Environment.ProcessPath, "/auto");
+            var exePath = Environment.ProcessPath;
+            if (string.IsNullOrEmpty(exePath))
+                return;
+
+            using var key = Registry.CurrentUser.CreateSubKey(RunKeyPath, true);
+            key.SetValue(AppName, $"\"{exePath}\" /auto");
+            RemoveLegacyShortcut();
+        }
+        catch
+        {
+            // Нет прав / политика запрещает - не роняем UI
         }
     }
 
-    public static void RemoveFromStartupViaShortcut()
+    public static void Disable()
     {
-        string startupFolder = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
-        string shortcutPath = Path.Combine(startupFolder, $"{AppName}.lnk");
+        if (!OperatingSystem.IsWindows())
+            return;
 
-        if (File.Exists(shortcutPath))
+        try
         {
-            File.Delete(shortcutPath);
+            using var key = Registry.CurrentUser.OpenSubKey(RunKeyPath, true);
+            key?.DeleteValue(AppName, false);
         }
+        catch
+        {
+        }
+
+        RemoveLegacyShortcut();
     }
 
-    private static void CreateShortcut(string shortcutPath, string targetPath, string arguments)
+    // Ярлык в папке "Автозагрузка", который создавали прошлые версии, - иначе было бы два автозапуска
+    private static void RemoveLegacyShortcut()
     {
-        var shortcut = new WindowsShortcut
+        try
         {
-            Path = targetPath,
-            Arguments = arguments,
-            WorkingDirectory = System.IO.Path.GetDirectoryName(targetPath)
-        };
-        shortcut.Save(shortcutPath);
+            var startupFolder = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
+            var shortcutPath = Path.Combine(startupFolder, $"{AppName}.lnk");
+            if (File.Exists(shortcutPath))
+                File.Delete(shortcutPath);
+        }
+        catch
+        {
+        }
     }
 }

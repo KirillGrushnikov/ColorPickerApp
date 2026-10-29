@@ -1,9 +1,6 @@
-﻿using ReactiveUI;
+﻿using Avalonia.Input;
+using ColorPickerApp.Services;
 using System;
-using System.Reactive;
-using System.Reactive.Linq;
-using Avalonia.Input;
-using ColorPickerApp.ViewModels;
 
 namespace ColorPickerApp.ViewModels
 {
@@ -16,28 +13,80 @@ namespace ColorPickerApp.ViewModels
             set => this.RaiseAndSetIfChanged(ref _currentHotkey, value);
         }
 
-        public ReactiveCommand<Unit, string?> ConfirmCommand { get; }
-        public ReactiveCommand<Unit, string?> CancelCommand { get; }
-
-        public HotkeyDialogViewModel()
+        private string? _errorText;
+        public string? ErrorText
         {
-            // При подтверждении возвращаем текущую комбинацию
-            ConfirmCommand = ReactiveCommand.Create(() => CurrentHotkey);
-            // При отмене возвращаем null
-            CancelCommand = ReactiveCommand.Create(() => (string?)null);
+            get => _errorText;
+            set => this.RaiseAndSetIfChanged(ref _errorText, value);
         }
+
+        /// <summary>Второй хоткей приложения - с ним новая комбинация не должна совпадать.</summary>
+        public string? OtherHotkey { get; init; }
+
+        /// <summary>Для сообщения об ошибке: "уже назначена на {OtherHotkeyName}".</summary>
+        public string OtherHotkeyName { get; init; } = "другое действие";
+
+        /// <summary>Окно подписывается и закрывается с переданным результатом (null - отмена).</summary>
+        public event Action<string?>? CloseRequested;
+
+        // Привязаны к кнопкам в HotkeyDialogView.axaml
+        public void Confirm()
+        {
+            var hotkey = CurrentHotkey;
+
+            ErrorText = GlobalHotkeyService.Validate(hotkey);
+            if (ErrorText != null)
+                return;
+
+            if (GlobalHotkeyService.AreSame(hotkey, OtherHotkey))
+            {
+                ErrorText = $"Эта комбинация уже назначена на {OtherHotkeyName}";
+                return;
+            }
+
+            // Свои хоткеи на время диалога сняты, поэтому проверка честная
+            if (!GlobalHotkeyService.IsAvailable(hotkey))
+            {
+                ErrorText = "Комбинация уже занята другой программой или Windows";
+                return;
+            }
+
+            CloseRequested?.Invoke(hotkey);
+        }
+
+        public void Cancel() => CloseRequested?.Invoke(null);
 
         // Метод для обновления комбинации из события KeyDown
         public void UpdateHotkeyFromKeyDown(object? sender, KeyEventArgs e)
         {
-            var hotkey = GetStringHotkeyKeyDown(sender, e);
+            var hotkey = GetStringHotkeyKeyDown(e);
             if (hotkey != null)
             {
                 CurrentHotkey = hotkey;
+                ErrorText = null;
             }
         }
 
-        private string? GetStringHotkeyKeyDown(object? sender, KeyEventArgs e)
+        /// <summary>Боковые / средняя кнопки мыши: "Mouse4", "Mouse5", "MouseMiddle".</summary>
+        public void UpdateHotkeyFromMouse(KeyModifiers modifiers, string button)
+        {
+            CurrentHotkey = ModifiersPrefix(modifiers) + button;
+            ErrorText = null;
+        }
+
+        private static string ModifiersPrefix(KeyModifiers modifiers)
+        {
+            var prefix = "";
+            if (modifiers.HasFlag(KeyModifiers.Control))
+                prefix += "Ctrl+";
+            if (modifiers.HasFlag(KeyModifiers.Shift))
+                prefix += "Shift+";
+            if (modifiers.HasFlag(KeyModifiers.Alt))
+                prefix += "Alt+";
+            return prefix;
+        }
+
+        private static string? GetStringHotkeyKeyDown(KeyEventArgs e)
         {
             var modifiers = e.KeyModifiers;
             var key = e.Key;
@@ -52,15 +101,7 @@ namespace ColorPickerApp.ViewModels
                 return null;
             }
 
-            string hotkey = "";
-            if (modifiers.HasFlag(KeyModifiers.Control))
-                hotkey += "Ctrl+";
-            if (modifiers.HasFlag(KeyModifiers.Shift))
-                hotkey += "Shift+";
-            if (modifiers.HasFlag(KeyModifiers.Alt))
-                hotkey += "Alt+";
-
-            hotkey += key.ToString();
+            var hotkey = ModifiersPrefix(modifiers) + key.ToString();
             e.Handled = true;
             return hotkey;
         }

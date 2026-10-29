@@ -1,26 +1,18 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:compilerservices="using:System.Runtime.CompilerServices"
              x:Class="ColorPickerApp.App"
-             xmlns:local="using:ColorPickerApp"
              xmlns:vm="using:ColorPickerApp.ViewModels"
-             RequestedThemeVariant="Default"
+             RequestedThemeVariant="Dark"
              x:DataType="vm:MainWindowViewModel">
 
-    <Application.DataTemplates>
-        <local:ViewLocator/>
-    </Application.DataTemplates>
-
-    
-    <TrayIcon.Icons>
+  <TrayIcon.Icons>
     <TrayIcons>
       <TrayIcon Icon="/Assets/avalonia-logo.ico"
-                ToolTipText="Color Picker Pro"
+                ToolTipText="{Binding TrayToolTip}"
                 Command="{Binding ShowWindowCommand}">
         <TrayIcon.Menu>
           <NativeMenu>
-            <NativeMenuItem Header="Открыть" Command="{Binding ShowWindowCommand}" Gesture="{Binding OpenWindowKeyGesture}">
-            </NativeMenuItem>
+            <NativeMenuItem Header="Открыть" Command="{Binding ShowWindowCommand}" Gesture="{Binding OpenWindowKeyGesture}"/>
             <NativeMenuItem Header="Пипетка" Command="{Binding ShowEyedropper}" Gesture="{Binding PickerKeyGesture}"/>
             <NativeMenuItemSeparator />
             <NativeMenuItem Header="Выход" Command="{Binding QuitCommand}"/>
@@ -29,9 +21,14 @@
       </TrayIcon>
     </TrayIcons>
   </TrayIcon.Icons>
-  
-    <Application.Styles>
-        <FluentTheme />
-        <StyleInclude Source="avares://Avalonia.Controls.ColorPicker/Themes/Fluent/Fluent.xaml" />
-    </Application.Styles>
+
+  <Application.Resources>
+    <!-- Шрифт по умолчанию для всех контролов Fluent -->
+    <FontFamily x:Key="ContentControlThemeFontFamily">Segoe UI</FontFamily>
+  </Application.Resources>
+
+  <Application.Styles>
+    <FluentTheme />
+    <!-- Тема ColorPicker подключена в SettingsView.axaml: она грузится только при первом открытии настроек -->
+  </Application.Styles>
 </Application>

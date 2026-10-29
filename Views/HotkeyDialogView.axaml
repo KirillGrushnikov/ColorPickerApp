@@ -1,11 +1,11 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:reactiveUi="clr-namespace:ReactiveUI;assembly=ReactiveUI"
         xmlns:vm="clr-namespace:ColorPickerApp.ViewModels"
         x:Class="ColorPickerApp.Views.HotkeyDialogView"
         x:DataType="vm:HotkeyDialogViewModel"
         Title="Назначить горячую клавишу"
-        Width="400" Height="200"
+        Width="420"
+        SizeToContent="Height"
         CanResize="False"
         WindowStartupLocation="CenterOwner"
         Background="#1e1e1e"
@@ -15,28 +15,35 @@
         <vm:HotkeyDialogViewModel/>
     </Design.DataContext>
 
-    <StackPanel Margin="20" Spacing="15">
-        <TextBlock Text="Нажмите желаемую комбинацию клавиш" 
+    <StackPanel Margin="20" Spacing="12">
+        <TextBlock Text="Нажмите комбинацию клавиш или кнопку мыши"
                    HorizontalAlignment="Center"
                    FontWeight="Bold"/>
-        <Border 
-                Background="#484848"
+        <Border Background="#484848"
                 CornerRadius="5"
                 Padding="10"
-                Margin="0,10">
+                Margin="0,6">
             <TextBlock Text="{Binding CurrentHotkey, FallbackValue='[ожидание нажатия]'}"
                        FontSize="18"
-                       FontFamily="Courier New"
+                       FontFamily="Consolas, Courier New"
                        HorizontalAlignment="Center"
                        FontWeight="Bold"/>
         </Border>
+        <TextBlock Text="{Binding ErrorText}"
+                   IsVisible="{Binding ErrorText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                   Foreground="#FF8A65"
+                   TextWrapping="Wrap"
+                   TextAlignment="Center"
+                   HorizontalAlignment="Center"/>
         <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
-            <Button Content="Подтвердить" Command="{Binding ConfirmCommand}" Width="120" HorizontalContentAlignment="Center"/>
-            <Button Content="Отмена" Command="{Binding CancelCommand}" Width="120" HorizontalContentAlignment="Center"/>
+            <Button Content="Подтвердить" Command="{Binding Confirm}" Width="120" HorizontalContentAlignment="Center"/>
+            <Button Content="Отмена" Command="{Binding Cancel}" Width="120" HorizontalContentAlignment="Center"/>
         </StackPanel>
-        <TextBlock Text="(Для отмены можно просто закрыть окно)"
+        <TextBlock Text="Клавишам нужен Ctrl или Alt (кроме F1-F24). Боковые кнопки мыши (Mouse4 - «назад», Mouse5 - «вперёд») можно и без модификаторов, среднюю - только с Ctrl или Alt. Для отмены просто закройте окно."
                    FontSize="10"
                    Foreground="Gray"
+                   TextWrapping="Wrap"
+                   TextAlignment="Center"
                    HorizontalAlignment="Center"/>
     </StackPanel>
 </Window>
