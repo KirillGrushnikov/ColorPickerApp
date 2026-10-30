@@ -474,9 +474,9 @@ public sealed class GlobalHotkeyService : IDisposable
     public static string? Validate(string? hotkey)
     {
         if (string.IsNullOrWhiteSpace(hotkey))
-            return "Нажмите комбинацию клавиш";
+            return Loc.T("hk_err_press");
         if (!TryParse(hotkey, out var modifiers, out var vk))
-            return "Эта клавиша не поддерживается для глобального хоткея";
+            return Loc.T("hk_err_unsupported");
 
         // Без Ctrl/Alt/Win обычная клавиша (или Shift+буква) перестанет печататься во всех программах
         var isStandalone = vk is >= 0x70 and <= 0x87 // F1..F24
@@ -484,8 +484,8 @@ public sealed class GlobalHotkeyService : IDisposable
                            || vk is VK_XBUTTON1 or VK_XBUTTON2; // боковые кнопки мыши
         if ((modifiers & (MOD_CONTROL | MOD_ALT | MOD_WIN)) == 0 && !isStandalone)
             return vk == VK_MBUTTON
-                ? "Средняя кнопка мыши - только с Ctrl или Alt: иначе она перестанет работать в других программах"
-                : "Добавьте Ctrl или Alt: иначе эта клавиша перестанет работать в других программах";
+                ? Loc.T("hk_err_middle")
+                : Loc.T("hk_err_modifier");
 
         return null;
     }
@@ -509,10 +509,10 @@ public sealed class GlobalHotkeyService : IDisposable
     /// <summary>Текст для интерфейса; пустая строка - всё в порядке.</summary>
     public static string Describe(HotkeyStatus status) => status switch
     {
-        HotkeyStatus.Busy => "⚠ Комбинация занята другой программой - хоткей не работает",
-        HotkeyStatus.Invalid => "⚠ Клавиша не поддерживается - назначьте другую",
-        HotkeyStatus.Duplicate => "⚠ Совпадает с другим хоткеем - назначьте другую",
-        HotkeyStatus.HookFailed => "⚠ Не удалось включить перехват кнопок мыши",
+        HotkeyStatus.Busy => Loc.T("hk_status_busy"),
+        HotkeyStatus.Invalid => Loc.T("hk_status_invalid"),
+        HotkeyStatus.Duplicate => Loc.T("hk_status_duplicate"),
+        HotkeyStatus.HookFailed => Loc.T("hk_status_hookfailed"),
         _ => "",
     };
 

@@ -3,7 +3,10 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:ColorPickerApp.ViewModels"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             xmlns:controls="using:ColorPickerApp.Controls"
+             xmlns:local="using:ColorPickerApp"
+             xmlns:views="using:ColorPickerApp.Views"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="560"
              x:Class="ColorPickerApp.Views.SettingsView"
              x:DataType="vm:SettingsViewModel">
     <UserControl.DataContext>
@@ -11,96 +14,178 @@
     </UserControl.DataContext>
 
     <UserControl.Styles>
-        <!-- Тема ColorPicker грузится вместе с панелью настроек, а не при запуске приложения -->
-        <StyleInclude Source="avares://Avalonia.Controls.ColorPicker/Themes/Fluent/Fluent.xaml" />
+        <Style Selector="TextBlock.group">
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="Margin" Value="0,4,0,0" />
+        </Style>
+        <Style Selector="TextBlock.warn">
+            <Setter Property="Foreground" Value="#FF8A65" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
     </UserControl.Styles>
 
-    <StackPanel Margin="20" Spacing="15">
-        
-        <Button Content="Сбросить все настройки по умолчанию"
-                HorizontalAlignment="Left"
-                Command="{Binding ResetToDefaults}"/>
+    <!-- Две вкладки: основные настройки (в две колонки, без прокрутки) и редактор раскладки окна -->
+    <TabControl Padding="0,4,0,0" Margin="8,0,0,0">
+    <TabItem Header="{local:Tr set_tab_general}">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid Margin="12,8,12,12" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="32" RowSpacing="14">
 
-        <Separator/>
+            <Button Grid.ColumnSpan="2"
+                    Content="{local:Tr set_reset}"
+                    HorizontalAlignment="Left"
+                    Command="{Binding ResetToDefaults}"/>
 
-        <CheckBox Content="Запускать вместе с Windows"
-                  IsChecked="{Binding IsAutoStart}"/>
+            <!-- ===== Левая колонка ===== -->
+            <StackPanel Grid.Row="1" Spacing="8">
+                <TextBlock Classes="group" Text="{local:Tr set_group_general}" />
+                <CheckBox Content="{local:Tr set_autostart}" IsChecked="{Binding IsAutoStart}"/>
+                <CheckBox Content="{local:Tr set_tray}"
+                          IsChecked="{Binding !PermanentCloseWindow}" IsEnabled="{Binding !IsAutoStart}"/>
+                <CheckBox Content="{local:Tr set_topmost}" IsChecked="{Binding AlwaysOnTop}"/>
+                <CheckBox Content="{local:Tr set_remember}" IsChecked="{Binding RememberLastColor}"/>
 
-        <CheckBox Content="Сворачивать в трей"
-                  IsChecked="{Binding !PermanentCloseWindow}" IsEnabled="{Binding !IsAutoStart}"/>
+                <TextBlock Classes="group" Text="{local:Tr set_group_picker}" />
+                <CheckBox Content="{local:Tr set_autocopy}" IsChecked="{Binding AutoCopyOnPick}"/>
+                <CheckBox Content="{local:Tr set_restore}" IsChecked="{Binding RestoreWindowAfterPick}"/>
 
-        <CheckBox Content="Автоматически копировать цвет в буфер обмена при выборе через пипетку"
-                  IsChecked="{Binding AutoCopyOnPick}"/>
-
-        <CheckBox Content="Разворачивать главное окно после закрытия пипетки"
-                  IsChecked="{Binding RestoreWindowAfterPick}"/>
-        
-        <StackPanel Orientation="Horizontal" Spacing="10">
-            <TextBlock Text="Горячая клавиша вызова пипетки:" VerticalAlignment="Center"/>
-            <Button Command="{Binding ButtonPickerHotkey_OnClick}"
-                     Content="{Binding PickerHotkey}"
-                     Width="150"
-                     CornerRadius="4"
-                     VerticalAlignment="Center"/>
-            <TextBlock Text="(клавиши или кнопка мыши)" FontSize="11" Foreground="Gray" VerticalAlignment="Center"/>
-        </StackPanel>
-        <TextBlock Text="{Binding PickerHotkeyStatus}"
-                   IsVisible="{Binding PickerHotkeyStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                   Foreground="#FF8A65" FontSize="12" Margin="0,-8,0,0"/>
-
-        <StackPanel Orientation="Horizontal" Spacing="10">
-            <TextBlock Text="Горячая клавиша вызова окна:      " VerticalAlignment="Center"/>
-            <Button Command="{Binding ButtonOpenWindowHotkey_OnClick}"
-                     Content="{Binding OpenWindowHotkey}"
-                     Width="150"
-                     CornerRadius="4"
-                     VerticalAlignment="Center"/>
-            <TextBlock Text="(клавиши или кнопка мыши)" FontSize="11" Foreground="Gray" VerticalAlignment="Center"/>
-        </StackPanel>
-        <TextBlock Text="{Binding OpenWindowHotkeyStatus}"
-                   IsVisible="{Binding OpenWindowHotkeyStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                   Foreground="#FF8A65" FontSize="12" Margin="0,-8,0,0"/>
-
-        <StackPanel Spacing="8">
-            <TextBlock Text="Фон для отображения прозрачных областей:" FontWeight="Bold"/>
-            <StackPanel Orientation="Horizontal" Spacing="20">
-                <ComboBox Width="275"
-                          HorizontalContentAlignment="Left"
-                          SelectedIndex="{Binding BackgroundTypeIndex}">
-                    <ComboBoxItem>
-					    <StackPanel Orientation="Horizontal" Spacing="10">
-                            <Border BorderBrush="Gray" BorderThickness="1">
-						        <Grid ColumnDefinitions="*,*,*" RowDefinitions="*,*,*" Width="24" Height="24" HorizontalAlignment="Left">
-								    <Border Grid.Column="0" Grid.Row="0" Background="White"/> <Border Grid.Column="1" Grid.Row="0" Background="#c1c1c1"/> <Border Grid.Column="2" Grid.Row="0" Background="White"/>
-								    <Border Grid.Column="0" Grid.Row="1" Background="#c1c1c1"/> <Border Grid.Column="1" Grid.Row="1" Background="White"/> <Border Grid.Column="2" Grid.Row="1" Background="#c1c1c1"/>
-								    <Border Grid.Column="0" Grid.Row="2" Background="White"/> <Border Grid.Column="1" Grid.Row="2" Background="#c1c1c1"/> <Border Grid.Column="2" Grid.Row="2" Background="White"/>
-                                </Grid>
-                            </Border>
-                            <Label Content="Светлый шахматный"/>
-                        </StackPanel>
-                    </ComboBoxItem>
-                    <ComboBoxItem>
-					    <StackPanel Orientation="Horizontal" Spacing="10">
-                            <Border BorderBrush="Gray" BorderThickness="1">
-						        <Grid ColumnDefinitions="*,*,*" RowDefinitions="*,*,*" Width="24" Height="24" HorizontalAlignment="Left">
-								    <Border Grid.Column="0" Grid.Row="0" Background="#2b2b2b"/> <Border Grid.Column="1" Grid.Row="0" Background="#333333"/> <Border Grid.Column="2" Grid.Row="0" Background="#2b2b2b"/>
-								    <Border Grid.Column="0" Grid.Row="1" Background="#333333"/> <Border Grid.Column="1" Grid.Row="1" Background="#2b2b2b"/> <Border Grid.Column="2" Grid.Row="1" Background="#333333"/>
-								    <Border Grid.Column="0" Grid.Row="2" Background="#2b2b2b"/> <Border Grid.Column="1" Grid.Row="2" Background="#333333"/> <Border Grid.Column="2" Grid.Row="2" Background="#2b2b2b"/>
-                                </Grid>
-                            </Border>
-                            <Label Content="Тёмный шахматный"/>
-                        </StackPanel>
-                    </ComboBoxItem>
-                    <ComboBoxItem>
-					    <StackPanel Orientation="Horizontal">
-                            <Label Content="Сплошной пользовательский"/>
-                        </StackPanel>
-                    </ComboBoxItem>
-                </ComboBox>
-
-                <ColorPicker IsVisible="{Binding IsCustomColorSelected}" Color="{Binding CustomBackgroundColor}"
-                             HorizontalAlignment="Left"/>
+                <TextBlock Classes="group" Text="{local:Tr set_group_lang}" />
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <ComboBox SelectedIndex="{Binding LanguageIndex}" Width="200">
+                        <ComboBoxItem Content="{local:Tr set_lang_auto}"/>
+                        <ComboBoxItem Content="Русский"/>
+                        <ComboBoxItem Content="English"/>
+                    </ComboBox>
+                    <Button Content="{local:Tr set_restart}"
+                            Padding="10,6"
+                            IsVisible="{Binding IsRestartNeeded}"
+                            Command="{Binding RestartApp}"/>
+                </StackPanel>
+                <TextBlock Classes="warn" Text="{local:Tr set_lang_restart}" IsVisible="{Binding IsRestartNeeded}"/>
             </StackPanel>
-        </StackPanel>
-    </StackPanel>
+
+            <!-- ===== Правая колонка ===== -->
+            <StackPanel Grid.Row="1" Grid.Column="1" Spacing="8">
+                <TextBlock Classes="group" Text="{local:Tr set_group_hotkeys}" />
+                <Grid ColumnDefinitions="Auto,170" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="4">
+                    <TextBlock Text="{local:Tr set_hk_picker}" VerticalAlignment="Center"/>
+                    <Button Grid.Column="1"
+                            Command="{Binding ButtonPickerHotkey_OnClick}"
+                            Content="{Binding PickerHotkey}"
+                            ToolTip.Tip="{local:Tr set_hk_tip}"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            CornerRadius="4"/>
+                    <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Classes="warn"
+                               Text="{Binding PickerHotkeyStatus}"
+                               IsVisible="{Binding PickerHotkeyStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+
+                    <TextBlock Grid.Row="2" Text="{local:Tr set_hk_open}" VerticalAlignment="Center"/>
+                    <Button Grid.Row="2" Grid.Column="1"
+                            Command="{Binding ButtonOpenWindowHotkey_OnClick}"
+                            Content="{Binding OpenWindowHotkey}"
+                            ToolTip.Tip="{local:Tr set_hk_tip}"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            CornerRadius="4"/>
+                    <TextBlock Grid.Row="3" Grid.ColumnSpan="2" Classes="warn"
+                               Text="{Binding OpenWindowHotkeyStatus}"
+                               IsVisible="{Binding OpenWindowHotkeyStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                </Grid>
+
+                <TextBlock Classes="group" Text="{local:Tr set_group_hex}" />
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <TextBlock Text="{local:Tr set_hex_alpha}" VerticalAlignment="Center"/>
+                    <ComboBox SelectedIndex="{Binding HexAlphaOrderIndex}" Width="300"
+                              ToolTip.Tip="{local:Tr set_hex_alpha_tip}">
+                        <ComboBoxItem Content="{local:Tr set_hex_alpha_end}"/>
+                        <ComboBoxItem Content="{local:Tr set_hex_alpha_start}"/>
+                    </ComboBox>
+                </StackPanel>
+                <CheckBox Content="{local:Tr set_hex_upper}" IsChecked="{Binding HexUppercase}"/>
+
+                <TextBlock Classes="group" Text="{local:Tr set_group_bg}" />
+                <StackPanel Spacing="8">
+                    <ComboBox Width="250"
+                              HorizontalContentAlignment="Left"
+                              SelectedIndex="{Binding BackgroundTypeIndex}">
+                        <ComboBoxItem>
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <Border BorderBrush="Gray" BorderThickness="1">
+                                    <Grid ColumnDefinitions="*,*,*" RowDefinitions="*,*,*" Width="24" Height="24" HorizontalAlignment="Left">
+                                        <Border Grid.Column="0" Grid.Row="0" Background="White"/> <Border Grid.Column="1" Grid.Row="0" Background="#c1c1c1"/> <Border Grid.Column="2" Grid.Row="0" Background="White"/>
+                                        <Border Grid.Column="0" Grid.Row="1" Background="#c1c1c1"/> <Border Grid.Column="1" Grid.Row="1" Background="White"/> <Border Grid.Column="2" Grid.Row="1" Background="#c1c1c1"/>
+                                        <Border Grid.Column="0" Grid.Row="2" Background="White"/> <Border Grid.Column="1" Grid.Row="2" Background="#c1c1c1"/> <Border Grid.Column="2" Grid.Row="2" Background="White"/>
+                                    </Grid>
+                                </Border>
+                                <Label Content="{local:Tr set_bg_light}"/>
+                            </StackPanel>
+                        </ComboBoxItem>
+                        <ComboBoxItem>
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <Border BorderBrush="Gray" BorderThickness="1">
+                                    <Grid ColumnDefinitions="*,*,*" RowDefinitions="*,*,*" Width="24" Height="24" HorizontalAlignment="Left">
+                                        <Border Grid.Column="0" Grid.Row="0" Background="#2b2b2b"/> <Border Grid.Column="1" Grid.Row="0" Background="#333333"/> <Border Grid.Column="2" Grid.Row="0" Background="#2b2b2b"/>
+                                        <Border Grid.Column="0" Grid.Row="1" Background="#333333"/> <Border Grid.Column="1" Grid.Row="1" Background="#2b2b2b"/> <Border Grid.Column="2" Grid.Row="1" Background="#333333"/>
+                                        <Border Grid.Column="0" Grid.Row="2" Background="#2b2b2b"/> <Border Grid.Column="1" Grid.Row="2" Background="#333333"/> <Border Grid.Column="2" Grid.Row="2" Background="#2b2b2b"/>
+                                    </Grid>
+                                </Border>
+                                <Label Content="{local:Tr set_bg_dark}"/>
+                            </StackPanel>
+                        </ComboBoxItem>
+                        <ComboBoxItem>
+                            <Label Content="{local:Tr set_bg_custom}"/>
+                        </ComboBoxItem>
+                    </ComboBox>
+
+                    <!-- Свой выбор цвета в стиле приложения: образец + всплывающее окно с кругом и hex -->
+                    <Button IsVisible="{Binding IsCustomColorSelected}"
+                            HorizontalAlignment="Left"
+                            Padding="6,4"
+                            CornerRadius="8"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="{local:Tr set_bg_pick_tip}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Border Width="40" Height="22"
+                                    CornerRadius="5"
+                                    Background="{Binding CustomBackgroundBrush}"
+                                    BorderBrush="#40FFFFFF"
+                                    BorderThickness="1" />
+                            <TextBlock Text="{Binding CustomBackgroundHex}" FontFamily="Consolas, Courier New" VerticalAlignment="Center" Margin="0, 0, 0, -5"/>
+                            <TextBlock Text="▾" Foreground="Gray" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <Button.Flyout>
+                            <Flyout Placement="BottomEdgeAlignedLeft">
+                                <StackPanel Width="236" Spacing="10">
+                                    <controls:ColorWheelSvControl Width="220" Height="220"
+                                                                  HorizontalAlignment="Center"
+                                                                  Hue="{Binding CustomHue, Mode=TwoWay}"
+                                                                  Saturation="{Binding CustomSaturation, Mode=TwoWay}"
+                                                                  Value="{Binding CustomValue, Mode=TwoWay}" />
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                        <TextBox Text="{Binding CustomBackgroundHex, Mode=TwoWay}" Watermark="#ffffff" FontFamily="Consolas, Courier New" VerticalContentAlignment="Center"/>
+                                        <Button Grid.Column="1"
+                                                Content="{local:Tr set_bg_current}"
+                                                Padding="10,6"
+                                                Command="{Binding UseCurrentColorForBackground}"
+                                                ToolTip.Tip="{local:Tr set_bg_current_tip}" />
+                                    </Grid>
+                                </StackPanel>
+                            </Flyout>
+                        </Button.Flyout>
+                    </Button>
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+    </ScrollViewer>
+    </TabItem>
+
+    <!-- ===== Раскладка окна: мини-схема, вкладки перетаскиваются мышью ===== -->
+    <TabItem Header="{local:Tr set_group_layout}">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <views:LayoutEditor Margin="12,12,12,12" />
+        </ScrollViewer>
+    </TabItem>
+    </TabControl>
 </UserControl>

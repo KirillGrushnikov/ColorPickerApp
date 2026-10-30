@@ -25,11 +25,12 @@
     <!-- Только реально используемые ресурсы (картинки для README не нужны внутри exe) -->
     <AvaloniaResource Include="Assets\avalonia-logo.ico" />
     <AvaloniaResource Include="Assets\color-picker.png" />
+    <!-- Справка: Assets/help.ru.md и help.en.md (читаются через AssetLoader) -->
+    <AvaloniaResource Include="Assets\help.*.md" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.3.12" />
-    <PackageReference Include="Avalonia.Controls.ColorPicker" Version="11.3.12" />
     <PackageReference Include="Avalonia.Desktop" Version="11.3.12" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.12" />
     <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->

@@ -2,6 +2,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Media.Immutable;
@@ -77,6 +78,7 @@ public class OklchSlider : Control
     private WriteableBitmap? _gradient;
     private (int Width, OklchChannel Channel, double A, double B) _gradientKey;
     private bool _dragging;
+    private bool _showFocus;
 
     static OklchSlider()
     {
@@ -165,7 +167,7 @@ public class OklchSlider : Control
 
         context.DrawEllipse(fill, ThumbOuterPen, center, ThumbRadius, ThumbRadius);
         context.DrawEllipse(null, ThumbInnerPen, center, ThumbRadius - 1.5, ThumbRadius - 1.5);
-        if (IsFocused)
+        if (_showFocus)
             context.DrawEllipse(null, FocusPen, center, ThumbRadius + 2.5, ThumbRadius + 2.5);
     }
 
@@ -253,6 +255,28 @@ public class OklchSlider : Control
         base.OnPointerReleased(e);
         _dragging = false;
         e.Pointer.Capture(null);
+    }
+
+    protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
+    {
+        base.OnPointerCaptureLost(e);
+        _dragging = false;
+    }
+
+    // Рамку фокуса показываем только при переходе с клавиатуры (Tab), а не после клика мышью -
+    // иначе маркер выглядел «залипшим» выбранным до смены вкладки
+    protected override void OnGotFocus(GotFocusEventArgs e)
+    {
+        base.OnGotFocus(e);
+        _showFocus = e.NavigationMethod == NavigationMethod.Tab || e.NavigationMethod == NavigationMethod.Directional;
+        InvalidateVisual();
+    }
+
+    protected override void OnLostFocus(RoutedEventArgs e)
+    {
+        base.OnLostFocus(e);
+        _showFocus = false;
+        InvalidateVisual();
     }
 
     protected override void OnPointerWheelChanged(PointerWheelEventArgs e)

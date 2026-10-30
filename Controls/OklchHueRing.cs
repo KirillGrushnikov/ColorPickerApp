@@ -2,6 +2,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Media.Immutable;
@@ -38,6 +39,7 @@ public class OklchHueRing : Control
     private WriteableBitmap? _ring;
     private (int Size, double Scaling, double L, double C) _ringKey;
     private bool _dragging;
+    private bool _showFocus;
 
     static OklchHueRing()
     {
@@ -99,7 +101,7 @@ public class OklchHueRing : Control
         var marker = new Point(center.X + Math.Cos(radians) * markerRadius, center.Y + Math.Sin(radians) * markerRadius);
         context.DrawEllipse(current, MarkerOuterPen, marker, 9, 9);
         context.DrawEllipse(null, MarkerInnerPen, marker, 7.5, 7.5);
-        if (IsFocused)
+        if (_showFocus)
             context.DrawEllipse(null, FocusPen, marker, 12, 12);
     }
 
@@ -201,6 +203,28 @@ public class OklchHueRing : Control
         base.OnPointerReleased(e);
         _dragging = false;
         e.Pointer.Capture(null);
+    }
+
+    protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
+    {
+        base.OnPointerCaptureLost(e);
+        _dragging = false;
+    }
+
+    // Рамку фокуса показываем только при переходе с клавиатуры (Tab), а не после клика мышью -
+    // иначе маркер выглядел «залипшим» выбранным до смены вкладки
+    protected override void OnGotFocus(GotFocusEventArgs e)
+    {
+        base.OnGotFocus(e);
+        _showFocus = e.NavigationMethod == NavigationMethod.Tab || e.NavigationMethod == NavigationMethod.Directional;
+        InvalidateVisual();
+    }
+
+    protected override void OnLostFocus(RoutedEventArgs e)
+    {
+        base.OnLostFocus(e);
+        _showFocus = false;
+        InvalidateVisual();
     }
 
     protected override void OnPointerWheelChanged(PointerWheelEventArgs e)

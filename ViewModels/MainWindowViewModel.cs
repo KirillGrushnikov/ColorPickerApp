@@ -76,6 +76,10 @@ public class MainWindowViewModel : ViewModelBase
             : Colors.White;
         SetFromHsv(_hue, _saturation, _value, _alpha);
 
+        // Открываемся с последним цветом прошлого сеанса
+        if (App.Settings.RememberLastColor && Color.TryParse(App.Settings.LastColor, out var last))
+            SetColor(last);
+
         App.Settings.PropertyChanged += Settings_PropertyChanged;
     }
 
@@ -90,9 +94,9 @@ public class MainWindowViewModel : ViewModelBase
 
             var text = "Color Picker Pro";
             if (hotkeys.PickerStatus is HotkeyStatus.Busy or HotkeyStatus.Invalid or HotkeyStatus.Duplicate or HotkeyStatus.HookFailed)
-                text += $"\n⚠ Хоткей пипетки {App.Settings.PickerHotkey} не работает";
+                text += "\n" + Loc.F("tray_picker_fail", App.Settings.PickerHotkey);
             if (hotkeys.OpenWindowStatus is HotkeyStatus.Busy or HotkeyStatus.Invalid or HotkeyStatus.Duplicate or HotkeyStatus.HookFailed)
-                text += $"\n⚠ Хоткей окна {App.Settings.OpenWindowHotkey} не работает";
+                text += "\n" + Loc.F("tray_open_fail", App.Settings.OpenWindowHotkey);
             return text;
         }
     }
@@ -115,7 +119,39 @@ public class MainWindowViewModel : ViewModelBase
             _openWindowKeyGesture = null;
             RaisePropertyChanged(nameof(OpenWindowKeyGesture));
         }
+        else if (e.PropertyName is nameof(AppSettingsStore.HexAlphaFirst) or nameof(AppSettingsStore.HexUppercase))
+        {
+            // Поменялся порядок альфы в HEX - обновляем поле Hex и текст для копирования
+            _internalUpdate = true;
+            try
+            {
+                UpdateDerived();
+                RaiseAll();
+                RaisePropertyChanged(nameof(ContrastBackgroundHex));
+            }
+            finally
+            {
+                _internalUpdate = false;
+            }
+        }
     }
+
+    /// <summary>
+    /// HEX с учётом настройки порядка альфы: #RRGGBBAA (CSS) или #AARRGGBB (Android/XAML).
+    /// Без альфы - всегда #RRGGBB.
+    /// </summary>
+    public static string FormatHex(byte alpha, int r, int g, int b, bool withAlpha)
+    {
+        var inv = CultureInfo.InvariantCulture;
+        var hex = !withAlpha
+            ? string.Format(inv, "#{0:x2}{1:x2}{2:x2}", r, g, b)
+            : App.Settings.HexAlphaFirst
+                ? string.Format(inv, "#{0:x2}{1:x2}{2:x2}{3:x2}", alpha, r, g, b)
+                : string.Format(inv, "#{0:x2}{1:x2}{2:x2}{3:x2}", r, g, b, alpha);
+        return ColorFormat.HexCase(hex);
+    }
+
+    private byte AlphaByte => (byte)Math.Round(_alpha * 255);
 
     private static KeyGesture? TryParseGesture(string? text)
     {
@@ -271,34 +307,63 @@ public class MainWindowViewModel : ViewModelBase
     public double OklchL
     {
         get => _oklchL;
-        set => SetOklch(value, _oklchC, _oklchH);
+        set
+        {
+            if (!IsDisplayEcho(value, _oklchL, 1))
+                SetOklch(value, _oklchC, _oklchH);
+        }
     }
 
     /// <summary>Хрома 0..0.4.</summary>
     public double OklchC
     {
         get => _oklchC;
-        set => SetOklch(_oklchL, value, _oklchH);
+        set
+        {
+            if (!IsDisplayEcho(value, _oklchC, 3))
+                SetOklch(_oklchL, value, _oklchH);
+        }
     }
 
     /// <summary>Тон 0..360°.</summary>
     public double OklchH
     {
         get => _oklchH;
-        set => SetOklch(_oklchL, _oklchC, value);
+        set
+        {
+            if (!IsDisplayEcho(value, _oklchH, 1))
+                SetOklch(_oklchL, _oklchC, value);
+        }
     }
 
     /// <summary>Выбранный OKLCH не помещается в sRGB - показан ближайший отображаемый цвет.</summary>
     public bool OklchOutOfGamut => !ColorMath.IsInSrgbGamut(_oklchL / 100, _oklchC, _oklchH);
 
+    /// <summary>
+    /// Поле NumericUpDown возвращает значение, округлённое до своего формата (F1/F3), например при потере
+    /// фокуса. Это не правка пользователя - иначе цвет незаметно сдвигался бы на округление.
+    /// </summary>
+    private static bool IsDisplayEcho(double value, double current, int decimals) =>
+        value != current && Math.Abs(value - Math.Round(current, decimals)) < 1e-9;
+
     private void SetOklch(double l, double c, double h, bool force = false)
     {
+        // Пока ViewModel рассылает уведомления об уже изменённом цвете, контролы OKLCH (поля NumericUpDown
+        // даже на неоткрытой вкладке) могут «вернуть» значение обратно - округлённое при переводе double -> decimal.
+        // Раньше такой возврат пересчитывал цвет из OKLCH, и тон основного круга прыгал (у серых - на красный).
+        if (_internalUpdate)
+            return;
+
         l = Math.Clamp(l, 0, 100);
         c = Math.Clamp(c, 0, 0.4);
         h %= 360;
         if (h < 0) h += 360;
 
-        if (!force && l == _oklchL && c == _oklchC && h == _oklchH)
+        // Отличия на уровне шума округления - не изменение
+        if (!force
+            && Math.Abs(l - _oklchL) < 1e-6
+            && Math.Abs(c - _oklchC) < 1e-7
+            && Math.Abs(h - _oklchH) < 1e-6)
             return;
 
         _oklchL = l;
@@ -410,7 +475,7 @@ public class MainWindowViewModel : ViewModelBase
     /// <summary>Фон для проверки контраста; текущий цвет - это текст.</summary>
     public string ContrastBackgroundHex
     {
-        get => ColorMath.ToHex(_contrastBackground);
+        get => ColorFormat.Hex(_contrastBackground);
         set
         {
             var hex = value?.Trim().TrimStart('#') ?? "";
@@ -443,6 +508,100 @@ public class MainWindowViewModel : ViewModelBase
         SetContrastBackground(OpaqueColor);
         SetColor(Color.FromArgb((byte)Math.Round(_alpha * 255), oldBackground.R, oldBackground.G, oldBackground.B));
     }
+
+    #region Подбор под контраст
+
+    private int _contrastTargetIndex = App.Settings.ContrastTargetIndex;
+    private string? _contrastSuggestionText;
+
+    /// <summary>0 - AA (4.5), 1 - AAA (7), 2 - крупный текст AA (3).</summary>
+    public int ContrastTargetIndex
+    {
+        get => _contrastTargetIndex;
+        set
+        {
+            if (!this.RaiseAndSetIfChanged(ref _contrastTargetIndex, Math.Clamp(value, 0, 2)))
+                return;
+            App.Settings.ContrastTargetIndex = _contrastTargetIndex;
+            App.Settings.Save();
+        }
+    }
+
+    /// <summary>Итог последнего подбора (что изменилось и какой получился контраст).</summary>
+    public string? ContrastSuggestionText
+    {
+        get => _contrastSuggestionText;
+        private set => this.RaiseAndSetIfChanged(ref _contrastSuggestionText, value);
+    }
+
+    private double ContrastTarget => _contrastTargetIndex switch
+    {
+        1 => 7,
+        2 => 3,
+        _ => 4.5,
+    };
+
+    private string ContrastTargetName => _contrastTargetIndex switch
+    {
+        1 => Loc.T("contrast_name_aaa"),
+        2 => Loc.T("contrast_name_large"),
+        _ => Loc.T("contrast_name_aa"),
+    };
+
+    /// <summary>Ближайший цвет текста, проходящий выбранный уровень (меняется только светлота).</summary>
+    public void SuggestTextColor()
+    {
+        var target = ContrastTarget;
+        var background = _contrastBackground;
+        var alpha = (byte)Math.Round(_alpha * 255);
+
+        if (ContrastRatio >= target)
+        {
+            ContrastSuggestionText = Loc.F("contrast_text_passes", ContrastTargetName);
+            return;
+        }
+
+        var before = ColorMath.ToOklch(OpaqueColor).L;
+        var (color, reached, ratio) = ContrastFix.Find(
+            OpaqueColor,
+            c => ColorMath.ContrastRatio(Color.FromArgb(alpha, c.R, c.G, c.B), background),
+            target);
+
+        SetColor(Color.FromArgb(alpha, color.R, color.G, color.B));
+        ContrastSuggestionText = DescribeSuggestion(Loc.T("contrast_what_text"), before, color, reached, ratio);
+    }
+
+    /// <summary>Ближайший цвет фона, с которым текущий текст проходит выбранный уровень.</summary>
+    public void SuggestBackgroundColor()
+    {
+        var target = ContrastTarget;
+        var text = SelectedColor;
+
+        if (ContrastRatio >= target)
+        {
+            ContrastSuggestionText = Loc.F("contrast_pair_passes", ContrastTargetName);
+            return;
+        }
+
+        var before = ColorMath.ToOklch(_contrastBackground).L;
+        var (color, reached, ratio) = ContrastFix.Find(
+            _contrastBackground,
+            c => ColorMath.ContrastRatio(text, c),
+            target);
+
+        SetContrastBackground(color);
+        ContrastSuggestionText = DescribeSuggestion(Loc.T("contrast_what_bg"), before, color, reached, ratio);
+    }
+
+    private string DescribeSuggestion(string what, double lightnessBefore, Color result, bool reached, double ratio)
+    {
+        var after = ColorMath.ToOklch(result).L;
+        return reached
+            ? Loc.F("contrast_result_ok", what, lightnessBefore * 100, after * 100, ColorFormat.Hex(result), ratio, ContrastTargetName)
+            : Loc.F("contrast_result_fail", what, ContrastTargetName, ratio, ColorFormat.Hex(result));
+    }
+
+    #endregion
 
     private void SetContrastBackground(Color color)
     {
@@ -508,9 +667,7 @@ public class MainWindowViewModel : ViewModelBase
             "normal" => CopyWithAlpha
                 ? string.Format(inv, "({0:F2}, {1:F2}, {2:F2}, {3:F2})", NormalR, NormalG, NormalB, Alpha)
                 : string.Format(inv, "({0:F2}, {1:F2}, {2:F2})", NormalR, NormalG, NormalB),
-            "hex" => CopyWithAlpha
-                ? string.Format(inv, "#{0:x2}{1:x2}{2:x2}{3:x2}", (int)Math.Round(Alpha * 255), R, G, B)
-                : string.Format(inv, "#{0:x2}{1:x2}{2:x2}", R, G, B),
+            "hex" => FormatHex(AlphaByte, R, G, B, CopyWithAlpha),
             "rgb-565" => RGB565.ToString(inv),
             "oklch" => FormatOklch(CopyWithAlpha),
             _ => CopyWithAlpha
@@ -521,8 +678,22 @@ public class MainWindowViewModel : ViewModelBase
 
     public void SetColor(Color color)
     {
-        var hsv = ColorMath.ToHsv(color);
-        SetFromHsv(hsv.H, hsv.S, hsv.V, color.A / 255.0);
+        var (h, s, v) = KeepUndefinedHsv(ColorMath.ToHsv(color));
+        SetFromHsv(h, s, v, color.A / 255.0);
+    }
+
+    /// <summary>
+    /// У серых тон не определён, у чёрного - ещё и насыщенность. Вместо 0 (красный) оставляем
+    /// текущие значения, чтобы маркеры круга не прыгали и цвет можно было «вернуть» обратно.
+    /// </summary>
+    private (double H, double S, double V) KeepUndefinedHsv((double H, double S, double V) hsv)
+    {
+        var (h, s, v) = hsv;
+        if (v <= 0)
+            return (_hue, _saturation, 0);
+        if (s <= 0)
+            return (_hue, 0, v);
+        return (h, s, v);
     }
 
     private void UpdateFromHsv()
@@ -539,10 +710,7 @@ public class MainWindowViewModel : ViewModelBase
 
         _internalUpdate = true;
         var color = Color.FromArgb((byte)Math.Round(_alpha * 255), (byte)_r, (byte)_g, (byte)_b);
-        var hsv = ColorMath.ToHsv(color);
-        _hue = hsv.H;
-        _saturation = hsv.S;
-        _value = hsv.V;
+        (_hue, _saturation, _value) = KeepUndefinedHsv(ColorMath.ToHsv(color));
         UpdateDerived();
         RaiseAll();
         _internalUpdate = false;
@@ -567,7 +735,8 @@ public class MainWindowViewModel : ViewModelBase
 
     private void UpdateDerived()
     {
-        _hex = string.Format(CultureInfo.InvariantCulture, "#{0:x2}{1:x2}{2:x2}", _r, _g, _b);
+        // Поле Hex показывает альфу, только если цвет полупрозрачный
+        _hex = FormatHex(AlphaByte, _r, _g, _b, AlphaByte < 255);
         _rgb565 = ((_r & 0xF8) << 8) | ((_g & 0xFC) << 3) | (_b >> 3);
         SyncOklchFromRgb();
     }
@@ -578,12 +747,35 @@ public class MainWindowViewModel : ViewModelBase
             return;
 
         var value = text.Trim().TrimStart('#');
-        if (value.Length != 6 || !int.TryParse(value, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var rgb))
+        if (value.Length is not (6 or 8)
+            || !uint.TryParse(value, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var number))
             return;
 
-        _r = (rgb >> 16) & 0xFF;
-        _g = (rgb >> 8) & 0xFF;
-        _b = rgb & 0xFF;
+        uint rgb;
+        if (value.Length == 8)
+        {
+            // 8 цифр - с альфой, в порядке из настроек
+            uint alpha;
+            if (App.Settings.HexAlphaFirst)
+            {
+                alpha = number >> 24;
+                rgb = number & 0xFFFFFF;
+            }
+            else
+            {
+                alpha = number & 0xFF;
+                rgb = number >> 8;
+            }
+            _alpha = alpha / 255.0;
+        }
+        else
+        {
+            rgb = number;
+        }
+
+        _r = (int)((rgb >> 16) & 0xFF);
+        _g = (int)((rgb >> 8) & 0xFF);
+        _b = (int)(rgb & 0xFF);
         UpdateFromRgb();
     }
 

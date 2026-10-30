@@ -1,5 +1,6 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:ColorPickerApp"
              x:Class="ColorPickerApp.App"
              xmlns:vm="using:ColorPickerApp.ViewModels"
              RequestedThemeVariant="Dark"
@@ -12,10 +13,10 @@
                 Command="{Binding ShowWindowCommand}">
         <TrayIcon.Menu>
           <NativeMenu>
-            <NativeMenuItem Header="Открыть" Command="{Binding ShowWindowCommand}" Gesture="{Binding OpenWindowKeyGesture}"/>
-            <NativeMenuItem Header="Пипетка" Command="{Binding ShowEyedropper}" Gesture="{Binding PickerKeyGesture}"/>
+            <NativeMenuItem Header="{local:Tr tray_open}" Command="{Binding ShowWindowCommand}" Gesture="{Binding OpenWindowKeyGesture}"/>
+            <NativeMenuItem Header="{local:Tr tray_picker}" Command="{Binding ShowEyedropper}" Gesture="{Binding PickerKeyGesture}"/>
             <NativeMenuItemSeparator />
-            <NativeMenuItem Header="Выход" Command="{Binding QuitCommand}"/>
+            <NativeMenuItem Header="{local:Tr tray_quit}" Command="{Binding QuitCommand}"/>
           </NativeMenu>
         </TrayIcon.Menu>
       </TrayIcon>
@@ -29,6 +30,5 @@
 
   <Application.Styles>
     <FluentTheme />
-    <!-- Тема ColorPicker подключена в SettingsView.axaml: она грузится только при первом открытии настроек -->
   </Application.Styles>
 </Application>

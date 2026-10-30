@@ -1,4 +1,6 @@
 ﻿using Avalonia.Media;
+using Avalonia.Media.Immutable;
+using System.Globalization;
 using Avalonia.Threading;
 using ColorPickerApp.Services;
 using ColorPickerApp.Views;
@@ -93,6 +95,94 @@ namespace ColorPickerApp.ViewModels
         }
 
         private bool _restoreWindowAfterPick;
+        public bool AlwaysOnTop
+        {
+            get => App.Settings.AlwaysOnTop;
+            set
+            {
+                if (App.Settings.AlwaysOnTop == value)
+                    return;
+                App.Settings.AlwaysOnTop = value; // окно подписано на изменение и сразу применит
+                App.Settings.Save();
+                this.RaisePropertyChanged();
+            }
+        }
+
+        public bool RememberLastColor
+        {
+            get => App.Settings.RememberLastColor;
+            set
+            {
+                if (App.Settings.RememberLastColor == value)
+                    return;
+                App.Settings.RememberLastColor = value;
+                App.Settings.Save();
+                this.RaisePropertyChanged();
+            }
+        }
+
+        public bool HexUppercase
+        {
+            get => App.Settings.HexUppercase;
+            set
+            {
+                if (App.Settings.HexUppercase == value)
+                    return;
+                App.Settings.HexUppercase = value;
+                App.Settings.Save();
+                this.RaisePropertyChanged();
+                this.RaisePropertyChanged(nameof(CustomBackgroundHex));
+            }
+        }
+
+        private readonly string _startupLanguage = App.Settings.Language;
+
+        /// <summary>0 - как в Windows, 1 - русский, 2 - English.</summary>
+        public int LanguageIndex
+        {
+            get => App.Settings.Language switch
+            {
+                Loc.Russian => 1,
+                Loc.English => 2,
+                _ => 0,
+            };
+            set
+            {
+                var language = value switch
+                {
+                    1 => Loc.Russian,
+                    2 => Loc.English,
+                    _ => "",
+                };
+                if (App.Settings.Language == language)
+                    return;
+                App.Settings.Language = language;
+                App.Settings.Save();
+                this.RaisePropertyChanged();
+                this.RaisePropertyChanged(nameof(IsRestartNeeded));
+            }
+        }
+
+        /// <summary>Язык выбран, но ещё не применён - показываем кнопку «Перезапустить».</summary>
+        public bool IsRestartNeeded => App.Settings.Language != _startupLanguage;
+
+        public void RestartApp() => App.Restart();
+
+        /// <summary>0 - #RRGGBBAA (CSS), 1 - #AARRGGBB (Android, XAML).</summary>
+        public int HexAlphaOrderIndex
+        {
+            get => App.Settings.HexAlphaFirst ? 1 : 0;
+            set
+            {
+                var alphaFirst = value == 1;
+                if (App.Settings.HexAlphaFirst == alphaFirst)
+                    return;
+                App.Settings.HexAlphaFirst = alphaFirst;
+                App.Settings.Save();
+                this.RaisePropertyChanged();
+            }
+        }
+
         public bool RestoreWindowAfterPick
         {
             get => _restoreWindowAfterPick;
@@ -135,9 +225,111 @@ namespace ColorPickerApp.ViewModels
             {
                 if (!this.RaiseAndSetIfChanged(ref _customBackgroundColor, value))
                     return;
+                if (!_customFromHsv)
+                    SyncCustomHsv();
+                this.RaisePropertyChanged(nameof(CustomBackgroundHex));
+                this.RaisePropertyChanged(nameof(CustomBackgroundBrush));
                 UpdateTransparentBackground();
             }
         }
+
+        #region Свой цвет фона (круг HSV во всплывающем окне)
+
+        // HSV хранится отдельно, чтобы тон не сбрасывался у серых и чёрного
+        private double _customHue;
+        private double _customSaturation;
+        private double _customValue = 1;
+        private bool _customFromHsv;
+
+        public double CustomHue
+        {
+            get => _customHue;
+            set
+            {
+                if (Math.Abs(value - _customHue) < 1e-9)
+                    return;
+                _customHue = value;
+                this.RaisePropertyChanged();
+                ApplyCustomHsv();
+            }
+        }
+
+        public double CustomSaturation
+        {
+            get => _customSaturation;
+            set
+            {
+                if (Math.Abs(value - _customSaturation) < 1e-9)
+                    return;
+                _customSaturation = value;
+                this.RaisePropertyChanged();
+                ApplyCustomHsv();
+            }
+        }
+
+        public double CustomValue
+        {
+            get => _customValue;
+            set
+            {
+                if (Math.Abs(value - _customValue) < 1e-9)
+                    return;
+                _customValue = value;
+                this.RaisePropertyChanged();
+                ApplyCustomHsv();
+            }
+        }
+
+        public string CustomBackgroundHex
+        {
+            get => ColorFormat.Hex(_customBackgroundColor);
+            set
+            {
+                var hex = value?.Trim().TrimStart('#') ?? "";
+                if (hex.Length == 6 && int.TryParse(hex, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var rgb))
+                    CustomBackgroundColor = Color.FromRgb((byte)(rgb >> 16), (byte)(rgb >> 8), (byte)rgb);
+            }
+        }
+
+        public IBrush CustomBackgroundBrush => new ImmutableSolidColorBrush(_customBackgroundColor);
+
+        /// <summary>Взять текущий цвет из главного окна.</summary>
+        public void UseCurrentColorForBackground()
+        {
+            if (App.MainViewModel is { } main)
+                CustomBackgroundColor = main.OpaqueColor;
+        }
+
+        private void ApplyCustomHsv()
+        {
+            _customFromHsv = true;
+            try
+            {
+                CustomBackgroundColor = ColorMath.FromHsv(_customHue, _customSaturation, _customValue);
+            }
+            finally
+            {
+                _customFromHsv = false;
+            }
+        }
+
+        private void SyncCustomHsv()
+        {
+            var (h, s, v) = ColorMath.ToHsv(_customBackgroundColor);
+            if (v > 0)
+            {
+                if (s > 0)
+                    _customHue = h;
+                _customSaturation = s;
+            }
+            _customValue = v;
+
+            this.RaisePropertyChanged(nameof(CustomHue));
+            this.RaisePropertyChanged(nameof(CustomSaturation));
+            this.RaisePropertyChanged(nameof(CustomValue));
+        }
+
+        #endregion
 
         private bool _isCustomColorSelected;
         public bool IsCustomColorSelected
@@ -161,6 +353,7 @@ namespace ColorPickerApp.ViewModels
             _backgroundType = (TransparentBackgroundType)_backgroundTypeIndex;
             _isCustomColorSelected = _backgroundType == TransparentBackgroundType.CustomColor;
             _customBackgroundColor = s.TransparentBackground1.Color;
+            SyncCustomHsv();
 
             if (App.Hotkeys is { } hotkeys)
                 hotkeys.StatusChanged += () => Dispatcher.UIThread.Post(RaiseHotkeyStatus);
@@ -181,14 +374,14 @@ namespace ColorPickerApp.ViewModels
 
         public async void ButtonPickerHotkey_OnClick()
         {
-            var result = await AskHotkeyAsync(PickerHotkey, OpenWindowHotkey, "открытие окна");
+            var result = await AskHotkeyAsync(PickerHotkey, OpenWindowHotkey, Loc.T("hk_other_open"));
             if (result != null)
                 PickerHotkey = result;
         }
 
         public async void ButtonOpenWindowHotkey_OnClick()
         {
-            var result = await AskHotkeyAsync(OpenWindowHotkey, PickerHotkey, "пипетку");
+            var result = await AskHotkeyAsync(OpenWindowHotkey, PickerHotkey, Loc.T("hk_other_picker"));
             if (result != null)
                 OpenWindowHotkey = result;
         }
@@ -213,8 +406,13 @@ namespace ColorPickerApp.ViewModels
             PickerHotkey = "Ctrl+Shift+P";
             OpenWindowHotkey = "Ctrl+Shift+O";
             RestoreWindowAfterPick = true;
+            HexAlphaOrderIndex = 0;
+            HexUppercase = false;
+            AlwaysOnTop = false;
+            RememberLastColor = true;
             BackgroundTypeIndex = 0;
             CustomBackgroundColor = Colors.White;
+            App.Settings.SetLayout(WindowLayout.Classic);
         }
 
         private void UpdateTransparentBackground()

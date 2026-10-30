@@ -391,12 +391,12 @@ public sealed class EyedropperOverlayWindow : Window
 
             // Во сколько раз один пиксель экрана больше своего реального размера
             var magnification = cellSize * physicalPerDip;
-            var caption = string.Format(CultureInfo.InvariantCulture, "#{0:X2}{1:X2}{2:X2}   ×{3:0}",
-                centerColor.R, centerColor.G, centerColor.B, magnification);
+            var caption = string.Format(CultureInfo.InvariantCulture, "{0}   ×{1:0}",
+                ColorFormat.Hex(centerColor), magnification);
 
             var text = new FormattedText(caption, CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
                 TextTypeface, 14, textBrush);
-            var hint = new FormattedText("колесо - масштаб · стрелки - 1 px · ПКМ/Esc - отмена",
+            var hint = new FormattedText(Loc.T("eyedropper_hint"),
                 CultureInfo.InvariantCulture, FlowDirection.LeftToRight, HintTypeface, 11, textBrush);
 
             var textPosition = new Point(boxX, boxY + loupeSize + 8);

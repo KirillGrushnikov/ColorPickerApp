@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -96,8 +97,104 @@ public sealed class AppSettingsStore : INotifyPropertyChanged
     /// <summary>Второй цвет (фон) для проверки контраста WCAG.</summary>
     public string ContrastBackground { get; set; } = "#FFFFFF";
 
+    private bool _hexUppercase;
+    private bool _alwaysOnTop;
+
+    /// <summary>Язык интерфейса: "ru", "en" или пусто - как в Windows. Применяется после перезапуска.</summary>
+    public string Language { get; set; } = "";
+
+    /// <summary>HEX заглавными буквами: #FF0000 вместо #ff0000.</summary>
+    public bool HexUppercase
+    {
+        get => _hexUppercase;
+        set
+        {
+            if (_hexUppercase == value)
+                return;
+            _hexUppercase = value;
+            OnPropertyChanged(nameof(HexUppercase));
+        }
+    }
+
+    /// <summary>Главное окно поверх всех окон.</summary>
+    public bool AlwaysOnTop
+    {
+        get => _alwaysOnTop;
+        set
+        {
+            if (_alwaysOnTop == value)
+                return;
+            _alwaysOnTop = value;
+            OnPropertyChanged(nameof(AlwaysOnTop));
+        }
+    }
+
+    /// <summary>Открывать программу с последним выбранным цветом.</summary>
+    public bool RememberLastColor { get; set; } = true;
+
+    /// <summary>Последний цвет (#AARRGGBB), сохраняется при выходе.</summary>
+    public string LastColor { get; set; } = "";
+
+    private bool _hexAlphaFirst;
+
+    /// <summary>
+    /// Порядок альфы в HEX: false - #RRGGBBAA (CSS, веб, Figma), true - #AARRGGBB (Android, WPF/XAML, Avalonia).
+    /// </summary>
+    public bool HexAlphaFirst
+    {
+        get => _hexAlphaFirst;
+        set
+        {
+            if (_hexAlphaFirst == value)
+                return;
+            _hexAlphaFirst = value;
+            OnPropertyChanged(nameof(HexAlphaFirst));
+        }
+    }
+
+    /// <summary>Уровень для подбора контраста: 0 - AA (4.5), 1 - AAA (7), 2 - крупный текст AA (3).</summary>
+    public int ContrastTargetIndex { get; set; } = 0;
+
+    /// <summary>Шкала оттенков: имя палитры, формат экспорта и формат значений.</summary>
+    public string ScaleName { get; set; } = "primary";
+    public int ScaleExportIndex { get; set; } = 0;
+    public int ScaleValueIndex { get; set; } = 0;
+
     /// <summary>Индекс уровня увеличения лупы пипетки.</summary>
     public int EyedropperZoomIndex { get; set; } = 3;
+
+    #region Раскладка окна
+
+    /// <summary>Вкладки по колонкам слева направо; основная колонка (без «Значений») - под индексом LayoutMainIndex.</summary>
+    public List<List<string>> LayoutColumns { get; set; } = new();
+
+    /// <summary>Индекс основной колонки в LayoutColumns (сколько колонок слева от неё).</summary>
+    public int LayoutMainIndex { get; set; }
+
+    /// <summary>Открытые вкладки (по одной на колонку) - восстанавливаются при следующем запуске.</summary>
+    public List<string> OpenTabs { get; set; } = new();
+
+    /// <summary>Скрытые вкладки.</summary>
+    public List<string> LayoutHidden { get; set; } = new();
+
+    /// <summary>Текущая раскладка (каждый раз новая копия - её можно менять).</summary>
+    [JsonIgnore]
+    public WindowLayout Layout => new(LayoutColumns, LayoutHidden, LayoutMainIndex);
+
+    /// <summary>Сохраняет раскладку; главное окно перестраивается сразу (PropertyChanged "Layout").</summary>
+    public void SetLayout(WindowLayout layout)
+    {
+        if (layout.SameAs(Layout))
+            return;
+
+        LayoutColumns = layout.Columns.Select(c => c.ToList()).ToList();
+        LayoutHidden = layout.Hidden.ToList();
+        LayoutMainIndex = layout.MainIndex;
+        Save();
+        OnPropertyChanged(nameof(Layout));
+    }
+
+    #endregion
 
     #region История цветов
 
@@ -158,6 +255,9 @@ public sealed class AppSettingsStore : INotifyPropertyChanged
                          ?? new AppSettingsStore();
             loaded.SavedSwatches ??= new List<string>();
             loaded.RecentColors ??= new List<string>();
+            loaded.LayoutColumns ??= new List<List<string>>();
+            loaded.LayoutHidden ??= new List<string>();
+            loaded.OpenTabs ??= new List<string>();
             return loaded;
         }
         catch
@@ -183,10 +283,13 @@ public sealed class AppSettingsStore : INotifyPropertyChanged
         _saveTimer.Start();
     }
 
+    /// <summary>Не писать на диск (режим снимков в Debug не должен трогать настройки пользователя).</summary>
+    public static bool SavingDisabled { get; set; }
+
     public void Flush()
     {
         _saveTimer?.Stop();
-        if (!_dirty)
+        if (!_dirty || SavingDisabled)
             return;
         _dirty = false;
 

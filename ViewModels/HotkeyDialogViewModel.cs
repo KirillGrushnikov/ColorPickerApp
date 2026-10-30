@@ -24,7 +24,7 @@ namespace ColorPickerApp.ViewModels
         public string? OtherHotkey { get; init; }
 
         /// <summary>Для сообщения об ошибке: "уже назначена на {OtherHotkeyName}".</summary>
-        public string OtherHotkeyName { get; init; } = "другое действие";
+        public string OtherHotkeyName { get; init; } = Loc.T("hk_other_default");
 
         /// <summary>Окно подписывается и закрывается с переданным результатом (null - отмена).</summary>
         public event Action<string?>? CloseRequested;
@@ -40,14 +40,14 @@ namespace ColorPickerApp.ViewModels
 
             if (GlobalHotkeyService.AreSame(hotkey, OtherHotkey))
             {
-                ErrorText = $"Эта комбинация уже назначена на {OtherHotkeyName}";
+                ErrorText = Loc.F("hk_err_same", OtherHotkeyName);
                 return;
             }
 
             // Свои хоткеи на время диалога сняты, поэтому проверка честная
             if (!GlobalHotkeyService.IsAvailable(hotkey))
             {
-                ErrorText = "Комбинация уже занята другой программой или Windows";
+                ErrorText = Loc.T("hk_err_busy");
                 return;
             }
 

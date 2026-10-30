@@ -22,7 +22,7 @@ namespace ColorPickerApp
             return brightness > 128 ? Colors.Black : Colors.White;
         }
 
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             if (value is Color color)
                 return new SolidColorBrush(GetContrastColor(color));
@@ -33,7 +33,7 @@ namespace ColorPickerApp
             return Brushes.Black;
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             if (value is SolidColorBrush brush)
                 return brush.Color;

@@ -14,6 +14,7 @@ internal static class SingleInstance
 
     private static Mutex? _mutex;
     private static EventWaitHandle? _activateEvent;
+    private static RegisteredWaitHandle? _activateRegistration;
 
     public static bool TryAcquire()
     {
@@ -39,6 +40,9 @@ internal static class SingleInstance
 
     public static void ActivateExisting()
     {
+        if (!OperatingSystem.IsWindows())
+            return;
+
         try
         {
             using var activateEvent = EventWaitHandle.OpenExisting(BaseName + "-activate");
@@ -56,11 +60,44 @@ internal static class SingleInstance
         if (_activateEvent is null)
             return;
 
-        ThreadPool.RegisterWaitForSingleObject(
+        _activateRegistration = ThreadPool.RegisterWaitForSingleObject(
             _activateEvent,
             (_, _) => onActivate(),
             null,
             Timeout.Infinite,
             executeOnlyOnce: false);
+    }
+
+    /// <summary>Освободить «единственный экземпляр» - перед перезапуском, чтобы новая копия не закрылась сразу.</summary>
+    public static void Release()
+    {
+        try
+        {
+            _activateRegistration?.Unregister(null);
+            _activateRegistration = null;
+            _activateEvent?.Dispose();
+            _activateEvent = null;
+        }
+        catch
+        {
+        }
+
+        try
+        {
+            _mutex?.ReleaseMutex();
+        }
+        catch
+        {
+            // Мьютекс принадлежит другому потоку - всё равно закроем дескриптор
+        }
+
+        try
+        {
+            _mutex?.Dispose();
+            _mutex = null;
+        }
+        catch
+        {
+        }
     }
 }

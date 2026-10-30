@@ -8,8 +8,23 @@ public static class StartupHelper
 {
     public static bool IsAutoStartMode { get; private set; }
 
+    /// <summary>
+    /// Только Debug: папка для снимков окна (--snapshot "папка") - проверка раскладок без участия человека.
+    /// Окно рендерится в PNG в нескольких раскладках, после чего программа закрывается.
+    /// </summary>
+    public static string? SnapshotDir { get; private set; }
+
     public static void Initialize(string[] args)
     {
+#if DEBUG
+        for (var i = 0; i + 1 < args.Length; i++)
+        {
+            if (args[i] == "--snapshot")
+                SnapshotDir = args[i + 1];
+        }
+        if (SnapshotDir is not null)
+            return;
+#endif
         foreach (var arg in args)
         {
             if (string.Equals(arg, "/auto", StringComparison.OrdinalIgnoreCase) ||
@@ -34,7 +49,7 @@ sealed class Program
 
         // Программа уже запущена (например, свёрнута в трей) - просто показываем её окно,
         // вместо холодного старта второй копии с ещё одним хуком и иконкой в трее.
-        if (!SingleInstance.TryAcquire())
+        if (StartupHelper.SnapshotDir is null && !SingleInstance.TryAcquire())
         {
             if (!StartupHelper.IsAutoStartMode)
                 SingleInstance.ActivateExisting();

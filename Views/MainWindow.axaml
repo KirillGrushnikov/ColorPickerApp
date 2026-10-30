@@ -143,9 +143,19 @@
         </Style>
 
         <Style Selector="TabItem">
-            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontSize" Value="13.5" />
             <Setter Property="MinHeight" Value="34" />
-            <Setter Property="Padding" Value="8,0" />
+            <Setter Property="Padding" Value="6,0" />
+        </Style>
+        <Style Selector="Button.scaleRow">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="4,0" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Height" Value="26" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
         </Style>
         <Style Selector="TextBlock.badge">
             <Setter Property="Foreground" Value="#FF8A65" />
@@ -224,6 +234,13 @@
 
     <Panel>
         <DockPanel Margin="18" LastChildFill="True">
+        <!-- Дополнительные колонки вкладок слева и справа (настройки → «Раскладка окна»): создаются в коде,
+             ширина окна растёт на колонку -->
+        <StackPanel Name="LeftColumnsHost" DockPanel.Dock="Left" Orientation="Horizontal" />
+        <StackPanel Name="ExtraColumnsHost" DockPanel.Dock="Right" Orientation="Horizontal" />
+
+        <!-- Основная колонка: пипетка + «Значения» + полоса цвета, её нельзя скрыть -->
+        <DockPanel LastChildFill="True">
             <Border Classes="panel" DockPanel.Dock="Bottom" Margin="0,14,0,0">
                 <Grid ColumnDefinitions="342,Auto,Auto,Auto,*" ColumnSpacing="8" MinHeight="64">
                     <Button Grid.Column="0"
@@ -236,7 +253,7 @@
                                 <controls:CheckerboardControl CellSize="12" />
                                 <Border Background="{Binding SelectedBrush}" CornerRadius="12" />
                                 <Label x:Name="lableContent" 
-                                       Content="Скопированно" 
+                                       Content="{local:Tr main_copied}" 
                                        HorizontalAlignment="Center" 
                                        VerticalAlignment="Center"
                                        FontSize="25" 
@@ -265,7 +282,7 @@
                                   VerticalAlignment="Center"
                                   OnContent=""
                                   OffContent=""
-                                  Content="С alpha" />
+                                  Content="{local:Tr main_with_alpha}" />
                     <Panel Grid.Column="3">
                         <ToggleButton 
                             Name="latticeToggleButton"
@@ -297,7 +314,7 @@
 						            <PathIcon Data="{StaticResource arrow-left-icon}" Foreground="LightGray" Width="14" Height="14"/>		
                                 </Button.Content>
                             </Button>
-                            <Label Name="ColorModeLabel" Content="Моно" VerticalAlignment="Center" HorizontalAlignment="Center" Grid.Column="1"/>
+                            <Label Name="ColorModeLabel" Content="{local:Tr harmony_single}" VerticalAlignment="Center" HorizontalAlignment="Center" Grid.Column="1"/>
                             <Button Content="2" Grid.Column="2" Click="ButtonNextColorMode_OnClick">
                                 <Button.Content>		
 						            <PathIcon Data="{StaticResource arrow-right-icon}" Foreground="LightGray" Width="14" Height="14"/>	
@@ -344,7 +361,7 @@
 
                 <Border Classes="panel" Grid.Column="1" Padding="12,4,12,12">
                     <TabControl Name="RightTabs" Padding="0,6,0,0">
-                        <TabItem Header="Значения">
+                        <TabItem Header="{local:Tr tab_values}" Name="ValuesTab">
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <StackPanel Spacing="10">
                                 <TextBlock Text="RGB" FontWeight="SemiBold" />
@@ -393,29 +410,30 @@
                             </ScrollViewer>
                         </TabItem>
 
-                        <TabItem Header="OKLCH">
+                        <TabItem Header="{local:Tr tab_oklch}" Name="OklchTab">
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <StackPanel Spacing="10">
                                     <!-- Текстом: вставка/правка, применяется по Enter или при уходе фокуса -->
                                     <TextBox Name="OklchBox"
                                              Text="{Binding Oklch, Mode=OneWay}"
                                              Watermark="oklch(62.8% 0.258 29.2)"
-                                             ToolTip.Tip="Можно вставить значение из CSS. Enter - применить, Esc - отменить"
+                                             ToolTip.Tip="{local:Tr oklch_box_tip}"
                                              KeyDown="OnOklchKeyDown"
                                              LostFocus="OnOklchLostFocus" />
 
-                                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                                    <!-- В узкой колонке круг встаёт над ползунками (см. SetOklchCompact) -->
+                                    <Grid Name="OklchGrid" ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" ColumnSpacing="14">
                                         <!-- Круг тона: клик/перетаскивание, колесо мыши, стрелки -->
-                                        <controls:OklchHueRing Width="168" Height="168"
+                                        <controls:OklchHueRing Name="OklchRing" Width="168" Height="168"
                                                                VerticalAlignment="Top"
                                                                Lightness="{Binding OklchL}"
                                                                Chroma="{Binding OklchC}"
                                                                HueAngle="{Binding OklchH, Mode=TwoWay}"
-                                                               ToolTip.Tip="Тон (H): клик или перетаскивание по кругу, колесо мыши - по 1°, с Shift - по 10°" />
+                                                               ToolTip.Tip="{local:Tr oklch_ring_tip}" />
 
-                                        <StackPanel Grid.Column="1" Spacing="4">
+                                        <StackPanel Name="OklchSliders" Grid.Column="1" Spacing="4">
                                             <Grid ColumnDefinitions="*,Auto">
-                                                <TextBlock Text="L  светлота, %" VerticalAlignment="Center" FontWeight="SemiBold" />
+                                                <TextBlock Text="{local:Tr oklch_l}" VerticalAlignment="Center" FontWeight="SemiBold" />
                                                 <NumericUpDown Grid.Column="1" Width="112" Minimum="0" Maximum="100" Increment="0.5" FormatString="F1"
                                                                Value="{Binding OklchL, Mode=TwoWay}" />
                                             </Grid>
@@ -424,7 +442,7 @@
                                                                   Lightness="{Binding OklchL}" Chroma="{Binding OklchC}" HueAngle="{Binding OklchH}" />
 
                                             <Grid ColumnDefinitions="*,Auto" Margin="0,6,0,0">
-                                                <TextBlock Text="C  хрома" VerticalAlignment="Center" FontWeight="SemiBold" />
+                                                <TextBlock Text="{local:Tr oklch_c}" VerticalAlignment="Center" FontWeight="SemiBold" />
                                                 <NumericUpDown Grid.Column="1" Width="112" Minimum="0" Maximum="0.4" Increment="0.005" FormatString="F3"
                                                                Value="{Binding OklchC, Mode=TwoWay}" />
                                             </Grid>
@@ -433,7 +451,7 @@
                                                                   Lightness="{Binding OklchL}" Chroma="{Binding OklchC}" HueAngle="{Binding OklchH}" />
 
                                             <Grid ColumnDefinitions="*,Auto" Margin="0,6,0,0">
-                                                <TextBlock Text="H  тон, °" VerticalAlignment="Center" FontWeight="SemiBold" />
+                                                <TextBlock Text="{local:Tr oklch_h}" VerticalAlignment="Center" FontWeight="SemiBold" />
                                                 <NumericUpDown Grid.Column="1" Width="112" Minimum="0" Maximum="360" Increment="1" FormatString="F1"
                                                                Value="{Binding OklchH, Mode=TwoWay}" />
                                             </Grid>
@@ -446,84 +464,170 @@
                                     <TextBlock Classes="helpText"
                                                Foreground="#FF8A65"
                                                IsVisible="{Binding OklchOutOfGamut}"
-                                               Text="⚠ Такой цвет экран показать не может: показан и копируется ближайший (с меньшей хромой)." />
+                                               Text="{local:Tr oklch_out_of_gamut}" />
                                     <TextBlock Classes="helpText"
-                                               Text="Тяните ползунки или круг, крутите колесо мыши над ними (с Shift - крупный шаг), стрелки - точная подстройка. Шкалы показывают, каким станет цвет; затемнённые участки - цвета вне sRGB." />
+                                               Text="{local:Tr oklch_hint}" />
                                 </StackPanel>
                             </ScrollViewer>
                         </TabItem>
 
-                        <TabItem Header="Контраст">
-                            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                <StackPanel Spacing="10">
-                                    <Border CornerRadius="10"
-                                            Background="{Binding ContrastBackgroundBrush}"
-                                            BorderBrush="#30FFFFFF"
-                                            BorderThickness="1"
-                                            Padding="14,10">
-                                        <StackPanel Spacing="4">
-                                            <TextBlock Text="Крупный текст Aa" FontSize="24" FontWeight="SemiBold" Foreground="{Binding SelectedBrush}" />
-                                            <TextBlock Text="Обычный текст 14 px: съешь же ещё этих мягких французских булок."
-                                                       FontSize="14"
-                                                       TextWrapping="Wrap"
-                                                       Foreground="{Binding SelectedBrush}" />
-                                        </StackPanel>
-                                    </Border>
+                        <TabItem Header="{local:Tr tab_scale}" Name="ScaleTab">
+                            <DockPanel>
+                                <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,0,0,6">
+                                    <TextBlock Classes="helpText"
+                                               VerticalAlignment="Center"
+                                               Text="{local:Tr scale_hint}" />
+                                    <CheckBox Grid.Column="1"
+                                              Name="ScalePinnedBox"
+                                              Content="{local:Tr scale_pin}"
+                                              ToolTip.Tip="{local:Tr scale_pin_tip}" />
+                                </Grid>
 
-                                    <Grid ColumnDefinitions="44,*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="6">
-                                        <TextBlock Text="Текст" VerticalAlignment="Center" />
-                                        <TextBox Grid.Column="1" IsReadOnly="True" Text="{Binding Hex, Mode=OneWay}" />
+                                <StackPanel DockPanel.Dock="Bottom" Spacing="6" Margin="0,8,0,0">
+                                    <Grid ColumnDefinitions="Auto,*,Auto,96" ColumnSpacing="8">
+                                        <TextBlock Text="{local:Tr scale_name}" VerticalAlignment="Center" />
+                                        <TextBox Grid.Column="1" Name="ScaleNameBox" Watermark="primary"
+                                                 ToolTip.Tip="{local:Tr scale_name_tip}" />
+                                        <TextBlock Grid.Column="2" Text="{local:Tr scale_values}" VerticalAlignment="Center" />
+                                        <ComboBox Grid.Column="3" Name="ScaleValueBox" HorizontalAlignment="Stretch">
+                                            <ComboBoxItem Content="HEX" />
+                                            <ComboBoxItem Content="OKLCH" />
+                                            <ComboBoxItem Content="RGB" />
+                                        </ComboBox>
+                                    </Grid>
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                        <ComboBox Name="ScaleExportBox" HorizontalAlignment="Stretch">
+                                            <ComboBoxItem Content="{local:Tr scale_export_css}" />
+                                            <ComboBoxItem Content="{local:Tr scale_export_tw4}" />
+                                            <ComboBoxItem Content="{local:Tr scale_export_tw3}" />
+                                            <ComboBoxItem Content="{local:Tr scale_export_list}" />
+                                        </ComboBox>
+                                        <Button Grid.Column="1" Content="{local:Tr scale_copy}" Padding="10,6" Click="OnCopyScaleClick" />
+                                    </Grid>
+                                </StackPanel>
+
+                                <!-- 11 строк создаются в коде при первом открытии вкладки -->
+                                <StackPanel Name="ScaleRowsPanel" Spacing="1" />
+                            </DockPanel>
+                        </TabItem>
+
+                        <TabItem Header="{local:Tr tab_contrast}" Name="ContrastTab">
+                            <!-- Компактная вёрстка: всё помещается без прокрутки; ScrollViewer - только на всякий случай -->
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel Spacing="8">
+                                    <!-- Превью и отношение контраста -->
+                                    <!-- В узкой колонке отношение уходит под превью (см. SetContrastCompact) -->
+                                    <Grid Name="ContrastHeadGrid" ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="12">
+                                        <Border CornerRadius="10"
+                                                Background="{Binding ContrastBackgroundBrush}"
+                                                BorderBrush="#30FFFFFF"
+                                                BorderThickness="1"
+                                                Padding="12,6"
+                                                ToolTip.Tip="{local:Tr contrast_preview_tip}">
+                                            <StackPanel>
+                                                <TextBlock Text="{local:Tr contrast_large_sample}" FontSize="22" FontWeight="SemiBold" Foreground="{Binding SelectedBrush}" />
+                                                <TextBlock Text="{local:Tr contrast_normal_sample}"
+                                                           FontSize="14"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           Foreground="{Binding SelectedBrush}" />
+                                            </StackPanel>
+                                        </Border>
+                                        <TextBlock Grid.Column="1"
+                                                   Name="ContrastRatioBlock"
+                                                   Text="{Binding ContrastRatioText}"
+                                                   FontSize="26"
+                                                   FontWeight="SemiBold"
+                                                   VerticalAlignment="Center" />
+                                    </Grid>
+
+                                    <!-- Цвета пары -->
+                                    <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+                                        <TextBlock Text="{local:Tr contrast_text}" VerticalAlignment="Center" />
+                                        <TextBox Grid.Column="1" IsReadOnly="True" Text="{Binding Hex, Mode=OneWay}" VerticalAlignment="Center"/>
                                         <Button Grid.Column="2"
-                                                Content="⇄ Поменять"
+                                                Content="{local:Tr contrast_swap}"
+                                                Padding="10,6"
                                                 HorizontalAlignment="Stretch"
                                                 HorizontalContentAlignment="Center"
                                                 Command="{Binding SwapContrastColors}"
-                                                ToolTip.Tip="Поменять местами цвет текста и фон" />
-                                        <TextBlock Grid.Row="1" Text="Фон" VerticalAlignment="Center" />
-                                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding ContrastBackgroundHex, Mode=TwoWay}" Watermark="#ffffff" />
+                                                ToolTip.Tip="{local:Tr contrast_swap_tip}" />
+                                        <TextBlock Grid.Row="1" Text="{local:Tr contrast_bg}" VerticalAlignment="Center" />
+                                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding ContrastBackgroundHex, Mode=TwoWay}" Watermark="#ffffff" VerticalAlignment="Center"/>
                                         <Button Grid.Row="1" Grid.Column="2"
-                                                Content="Текущий → фон"
+                                                Content="{local:Tr contrast_use_current}"
+                                                Padding="10,6"
                                                 HorizontalAlignment="Stretch"
                                                 HorizontalContentAlignment="Center"
                                                 Command="{Binding UseCurrentAsContrastBackground}"
-                                                ToolTip.Tip="Сделать текущий цвет фоном, затем выбрать цвет текста (например, пипеткой)" />
+                                                ToolTip.Tip="{local:Tr contrast_use_current_tip}" />
                                     </Grid>
 
-                                    <TextBlock Text="{Binding ContrastRatioText}" FontSize="30" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                                    <!-- Уровни WCAG: три колонки вместо трёх строк -->
+                                    <Grid Name="ContrastLevelsGrid" ColumnDefinitions="Auto,Auto,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="22" RowSpacing="2" HorizontalAlignment="Center">
+                                        <TextBlock Name="LevelNormalLabel" Classes="helpText" Text="{local:Tr contrast_normal}" />
+                                        <TextBlock Name="LevelLargeLabel" Grid.Column="1" Classes="helpText" Text="{local:Tr contrast_large}"
+                                                   ToolTip.Tip="{local:Tr contrast_large_tip}" />
+                                        <TextBlock Name="LevelUiLabel" Grid.Column="2" Classes="helpText" Text="{local:Tr contrast_ui}"
+                                                   ToolTip.Tip="{local:Tr contrast_ui_tip}" />
 
-                                    <Grid ColumnDefinitions="*,Auto,Auto" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="14" RowSpacing="6">
-                                        <TextBlock Text="Обычный текст" VerticalAlignment="Center" />
-                                        <TextBlock Grid.Column="1" Classes="badge" Classes.pass="{Binding PassAaNormal}"
-                                                   Text="{Binding PassAaNormal, Converter={StaticResource PassMark}, ConverterParameter='AA  4.5'}" />
-                                        <TextBlock Grid.Column="2" Classes="badge" Classes.pass="{Binding PassAaaNormal}"
-                                                   Text="{Binding PassAaaNormal, Converter={StaticResource PassMark}, ConverterParameter='AAA  7'}" />
-
-                                        <TextBlock Grid.Row="1" Text="Крупный текст (от 24 px или 18.7 px жирным)" TextWrapping="Wrap" VerticalAlignment="Center" />
-                                        <TextBlock Grid.Row="1" Grid.Column="1" Classes="badge" Classes.pass="{Binding PassAaLarge}"
-                                                   Text="{Binding PassAaLarge, Converter={StaticResource PassMark}, ConverterParameter='AA  3'}" />
-                                        <TextBlock Grid.Row="1" Grid.Column="2" Classes="badge" Classes.pass="{Binding PassAaaLarge}"
-                                                   Text="{Binding PassAaaLarge, Converter={StaticResource PassMark}, ConverterParameter='AAA  4.5'}" />
-
-                                        <TextBlock Grid.Row="2" Text="Иконки, рамки полей, элементы UI" TextWrapping="Wrap" VerticalAlignment="Center" />
-                                        <TextBlock Grid.Row="2" Grid.Column="1" Classes="badge" Classes.pass="{Binding PassUi}"
-                                                   Text="{Binding PassUi, Converter={StaticResource PassMark}, ConverterParameter='AA  3'}" />
+                                        <StackPanel Name="LevelNormalBadges" Grid.Row="1" Orientation="Horizontal" Spacing="10">
+                                            <TextBlock Classes="badge" Classes.pass="{Binding PassAaNormal}"
+                                                       Text="{Binding PassAaNormal, Converter={StaticResource PassMark}, ConverterParameter='AA 4.5'}" />
+                                            <TextBlock Classes="badge" Classes.pass="{Binding PassAaaNormal}"
+                                                       Text="{Binding PassAaaNormal, Converter={StaticResource PassMark}, ConverterParameter='AAA 7'}" />
+                                        </StackPanel>
+                                        <StackPanel Name="LevelLargeBadges" Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                                            <TextBlock Classes="badge" Classes.pass="{Binding PassAaLarge}"
+                                                       Text="{Binding PassAaLarge, Converter={StaticResource PassMark}, ConverterParameter='AA 3'}" />
+                                            <TextBlock Classes="badge" Classes.pass="{Binding PassAaaLarge}"
+                                                       Text="{Binding PassAaaLarge, Converter={StaticResource PassMark}, ConverterParameter='AAA 4.5'}" />
+                                        </StackPanel>
+                                        <TextBlock Name="LevelUiBadge" Grid.Row="1" Grid.Column="2" Classes="badge" Classes.pass="{Binding PassUi}"
+                                                   Text="{Binding PassUi, Converter={StaticResource PassMark}, ConverterParameter='AA 3'}" />
                                     </Grid>
 
+                                    <!-- Подбор: меняется только светлота (OKLCH), тон и насыщенность сохраняются -->
+                                    <Grid Name="ContrastSuggestGrid" ColumnDefinitions="*,Auto,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="6">
+                                        <ComboBox Name="ContrastTargetBox"
+                                                  SelectedIndex="{Binding ContrastTargetIndex}"
+                                                  HorizontalAlignment="Stretch"
+                                                  ToolTip.Tip="{local:Tr contrast_target_tip}">
+                                            <ComboBoxItem Content="AA - 4.5 : 1" />
+                                            <ComboBoxItem Content="AAA - 7 : 1" />
+                                            <ComboBoxItem Content="{local:Tr contrast_target_large}" />
+                                        </ComboBox>
+                                        <Button Grid.Column="1"
+                                                Name="SuggestTextButton"
+                                                HorizontalContentAlignment="Center"
+                                                Content="{local:Tr contrast_suggest_text}"
+                                                Padding="10,6"
+                                                Command="{Binding SuggestTextColor}"
+                                                ToolTip.Tip="{local:Tr contrast_suggest_text_tip}" />
+                                        <Button Grid.Column="2"
+                                                Name="SuggestBgButton"
+                                                HorizontalContentAlignment="Center"
+                                                Content="{local:Tr contrast_suggest_bg}"
+                                                Padding="10,6"
+                                                Command="{Binding SuggestBackgroundColor}"
+                                                ToolTip.Tip="{local:Tr contrast_suggest_bg_tip}" />
+                                    </Grid>
                                     <TextBlock Classes="helpText"
-                                               Text="Текст - текущий цвет (полупрозрачный сначала смешивается с фоном), фон всегда непрозрачный. Подробнее - во вкладке «Справка»." />
+                                               Foreground="#B9E4C0"
+                                               Text="{Binding ContrastSuggestionText}"
+                                               IsVisible="{Binding ContrastSuggestionText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                                 </StackPanel>
                             </ScrollViewer>
                         </TabItem>
 
-                        <TabItem Header="История" Name="HistoryTab">
+                        <TabItem Header="{local:Tr tab_history}" Name="HistoryTab">
                             <DockPanel>
                                 <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,0,0,10">
                                     <TextBlock Classes="helpText"
                                                VerticalAlignment="Center"
-                                               Text="Цвета из пипетки и скопированные. ЛКМ - применить, ПКМ - удалить." />
-                                    <Button Grid.Column="1" Content="Очистить" Click="OnClearHistoryClick" />
+                                               Text="{local:Tr history_hint}" />
+                                    <Button Grid.Column="1" Content="{local:Tr history_clear}" Click="OnClearHistoryClick" />
                                 </Grid>
-                                <TextBlock DockPanel.Dock="Top" Name="HistoryEmptyText" Classes="helpText" Text="История пока пуста." IsVisible="False" />
+                                <TextBlock DockPanel.Dock="Top" Name="HistoryEmptyText" Classes="helpText" Text="{local:Tr history_empty}" IsVisible="False" />
                                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                                     <!-- Кнопки строятся в коде при первом открытии вкладки -->
                                     <WrapPanel Name="HistoryPanel" />
@@ -531,54 +635,16 @@
                             </DockPanel>
                         </TabItem>
 
-                        <TabItem Header="Справка">
+                        <TabItem Header="{local:Tr tab_help}" Name="HelpTab">
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                <StackPanel Spacing="3" Margin="0,0,8,0">
-                                    <TextBlock Classes="helpTitle" Text="RGB / RGBA" />
-                                    <TextBlock Classes="helpCode" Text="rgb(255, 0, 0)    rgba(255, 0, 0, 0.50)" />
-                                    <TextBlock Classes="helpText" Text="Красный, зелёный, синий: 0-255, альфа 0-1. Стандарт веба (CSS) и большинства программ: Figma, Photoshop, Illustrator." />
-
-                                    <TextBlock Classes="helpTitle" Text="HSV" />
-                                    <TextBlock Classes="helpCode" Text="hsv(0, 100%, 100%)    hsva(0, 100%, 100%, 0.50)" />
-                                    <TextBlock Classes="helpText" Text="Тон (H) 0-360° - место на круге, насыщенность (S) и яркость (V) 0-100%. Так устроены круг и квадрат слева - удобно подбирать цвет «на глаз»; колесо мыши над кругом меняет тон (с Shift - по 10°). В CSS нет (там hsl), есть в Photoshop, Unity, OpenCV." />
-
-                                    <TextBlock Classes="helpTitle" Text="Normal (0..1)" />
-                                    <TextBlock Classes="helpCode" Text="(1.00, 0.00, 0.00)    (1.00, 0.00, 0.00, 0.50)" />
-                                    <TextBlock Classes="helpText" Text="Те же RGB, но дробью 0-1. Для шейдеров (GLSL/HLSL), Unity (new Color(r, g, b)), Godot, Blender, OpenGL." />
-
-                                    <TextBlock Classes="helpTitle" Text="HEX" />
-                                    <TextBlock Classes="helpCode" Text="#ff0000    с альфой: #80ff0000" />
-                                    <TextBlock Classes="helpText" Text="Шестнадцатеричная запись RGB. С альфой копируется как #AARRGGBB - формат Android, WPF, Avalonia, XAML. В CSS альфа пишется в конце (#RRGGBBAA): перенесите первые две цифры в конец." />
-
-                                    <TextBlock Classes="helpTitle" Text="RGB-565" />
-                                    <TextBlock Classes="helpCode" Text="63488" />
-                                    <TextBlock Classes="helpText" Text="16-битный цвет: 5 бит красного, 6 зелёного, 5 синего, без альфы. Для TFT-дисплеев микроконтроллеров (Arduino, ESP32; ILI9341, ST7735; Adafruit GFX, TFT_eSPI). Оттенки огрубляются." />
-
-                                    <TextBlock Classes="helpTitle" Text="OKLCH" />
-                                    <TextBlock Classes="helpCode" Text="oklch(62.8% 0.258 29.2)    oklch(62.8% 0.258 29.2 / 0.50)" />
-                                    <TextBlock Classes="helpText" Text="L - светлота 0-100% (как её видит глаз), C - хрома (насыщенность) примерно 0-0.37, H - тон 0-360°. Перцептивно равномерное пространство: одинаковый шаг L даёт одинаково заметную разницу, поэтому удобно строить палитры и темы. Поддерживается в CSS (Color 4), используется в Tailwind 4. Во вкладке «OKLCH» тон выбирается на круге, L и C - ползунками; цвета, которые экран не может показать, приводятся к ближайшим (уменьшается C)." />
-
-                                    <TextBlock Classes="helpTitle" Text="Кнопка ƒ / # возле формата" />
-                                    <TextBlock Classes="helpText" Text="Включает и выключает обёртку при копировании: rgb(255, 0, 0) ↔ 255, 0, 0, а для HEX - #ff0000 ↔ ff0000." />
-
-                                    <TextBlock Classes="helpTitle" Text="Контраст WCAG" />
-                                    <TextBlock Classes="helpText" Text="Отношение яркостей текста и фона: от 1:1 (одинаковые цвета) до 21:1 (чёрный на белом)." />
-                                    <TextBlock Classes="helpText" Text="• Обычный текст: AA - от 4.5, AAA - от 7." />
-                                    <TextBlock Classes="helpText" Text="• Крупный текст (от 24 px, или от 18.7 px жирным): AA - от 3, AAA - от 4.5." />
-                                    <TextBlock Classes="helpText" Text="• Иконки, рамки полей, графики, состояния кнопок: от 3." />
-                                    <TextBlock Classes="helpText" Text="AA - обычный минимум для сайтов и приложений, AAA - повышенный уровень." />
-
-                                    <TextBlock Classes="helpTitle" Text="Горячие клавиши" />
-                                    <TextBlock Classes="helpText" Text="Назначаются в настройках (панель слева). Можно использовать клавиши с Ctrl/Alt, F1-F24 или кнопки мыши: Mouse4 («назад»), Mouse5 («вперёд») - с модификаторами или без, среднюю - только с Ctrl/Alt. Нажатие хоткея не передаётся в другие программы." />
-
-                                    <TextBlock Classes="helpTitle" Text="Пипетка" />
-                                    <TextBlock Classes="helpText" Text="ЛКМ, Enter или пробел - выбрать; ПКМ или Esc - отмена; колесо мыши, + и - - масштаб лупы; стрелки - сдвиг на 1 пиксель (с Shift - на 10)." />
-                                </StackPanel>
+                                <!-- Содержимое строится из Assets/help.ru.md или help.en.md при первом открытии вкладки -->
+                                <StackPanel Name="HelpPanel" Spacing="3" Margin="0,0,8,0" />
                             </ScrollViewer>
                         </TabItem>
                     </TabControl>
                 </Border>
             </Grid>
+        </DockPanel>
         </DockPanel>
         <SplitView x:Name="SplitViewControl" 
             DisplayMode="CompactInline"
