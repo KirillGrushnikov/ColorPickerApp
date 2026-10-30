@@ -144,11 +144,6 @@ Requires Windows 10 or 11 (x64); .NET doesn't need to be installed.
 
 Requires the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0).
 
-| Script | What it does |
-|---|---|
-| `!publish-aot.bat` | Native AOT publish to `publish-aot\` — the fastest startup. Needs the Visual Studio "Desktop development with C++" workload |
-| `installer\create setup.iss` | [Inno Setup](https://jrsoftware.org/isinfo.php) script: builds the installer into `installer\Output\` (the publish folder is set in `SourcePath`) |
-
 A regular build without AOT: `dotnet publish -c Release -r win-x64 --self-contained true -o ./publish`.
 
 **Help and translation:**
@@ -308,11 +303,6 @@ See [LICENSE](LICENSE).
 ### Сборка из исходников
 
 Требуется [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0).
-
-| Скрипт | Что делает |
-|---|---|
-| `!publish-aot.bat` | Публикация Native AOT в `publish-aot\` — самый быстрый запуск. Нужна нагрузка Visual Studio «Разработка классических приложений на C++» |
-| `installer\create setup.iss` | Скрипт [Inno Setup](https://jrsoftware.org/isinfo.php): собирает установщик в `installer\Output\` (папка публикации задаётся в `SourcePath`) |
 
 Обычная сборка без AOT: `dotnet publish -c Release -r win-x64 --self-contained true -o ./publish`.
 
