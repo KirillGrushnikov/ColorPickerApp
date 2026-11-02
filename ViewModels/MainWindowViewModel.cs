@@ -29,6 +29,10 @@ public class MainWindowViewModel : ViewModelBase
         new(nameof(OklchL)),
         new(nameof(OklchC)),
         new(nameof(OklchH)),
+        new(nameof(CmykC)),
+        new(nameof(CmykM)),
+        new(nameof(CmykY)),
+        new(nameof(CmykK)),
         new(nameof(OklchOutOfGamut)),
         new(nameof(OpaqueColor)),
         new(nameof(SelectedBrush)),
@@ -58,6 +62,15 @@ public class MainWindowViewModel : ViewModelBase
     private KeyGesture? _pickerKeyGesture;
     private KeyGesture? _openWindowKeyGesture;
     private Color _contrastBackground;
+
+    private string _cmyk = "0%, 0%, 0%, 0%";
+
+    private double _cmykC = 0.0;
+    private double _cmykM = 0.0;
+    private double _cmykY = 0.0;
+    private double _cmykK = 0.0;
+
+    private bool _cmykDriving;
 
     // OKLCH-«намерение»: то, что выставил пользователь ползунками/кругом. Хранится отдельно от RGB,
     // чтобы ползунок хромы не прыгал при выходе за sRGB, а тон не терялся у серых цветов.
@@ -267,6 +280,56 @@ public class MainWindowViewModel : ViewModelBase
         }
     }
 
+    public string Cmyk
+    {
+        get => _cmyk;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _cmyk, value);
+            TryUpdateFromCmyk(value);
+        }
+    }
+
+    public double CmykC
+    {
+        get => _cmykC;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _cmykC, value);
+            UpdateFromCmyk();
+        }
+    }
+
+    public double CmykM
+    {
+        get => _cmykM;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _cmykM, value);
+            UpdateFromCmyk();
+        }
+    }
+
+    public double CmykY
+    {
+        get => _cmykY;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _cmykY, value);
+            UpdateFromCmyk();
+        }
+    }
+
+    public double CmykK
+    {
+        get => _cmykK;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _cmykK, value);
+            UpdateFromCmyk();
+        }
+    }
+
     public string Hex
     {
         get => _hex;
@@ -379,6 +442,25 @@ public class MainWindowViewModel : ViewModelBase
         {
             _oklchDriving = false;
         }
+    }
+
+    private void SyncCmykFromRgb()
+    {
+        if (_cmykDriving) return;
+
+        double r = _r / 255.0, g = _g / 255.0, b = _b / 255.0;
+        double k = 1.0 - Math.Max(r, Math.Max(g, b));
+        if (k >= 1.0 - 1e-9)
+        {
+            _cmykC = _cmykM = _cmykY = 0;
+            _cmykK = 1;
+            return;
+        }
+
+        _cmykC = (1.0 - r - k) / (1.0 - k);
+        _cmykM = (1.0 - g - k) / (1.0 - k);
+        _cmykY = (1.0 - b - k) / (1.0 - k);
+        _cmykK = k;
     }
 
     // При изменении цвета любым другим способом (круг HSV, RGB, пипетка...) пересчитываем OKLCH из RGB
@@ -670,6 +752,7 @@ public class MainWindowViewModel : ViewModelBase
             "hex" => FormatHex(AlphaByte, R, G, B, CopyWithAlpha),
             "rgb-565" => RGB565.ToString(inv),
             "oklch" => FormatOklch(CopyWithAlpha),
+            "cmyk" => string.Format(inv, "cmyk({0:F0}%, {1:F0}%, {2:F0}%, {3:F0}%)", CmykC * 100, CmykM * 100, CmykY * 100, CmykK * 100),
             _ => CopyWithAlpha
                 ? string.Format(inv, "rgba({0}, {1}, {2}, {3:F2})", R, G, B, Alpha)
                 : string.Format(inv, "rgb({0}, {1}, {2})", R, G, B),
@@ -733,13 +816,85 @@ public class MainWindowViewModel : ViewModelBase
         _internalUpdate = false;
     }
 
+    private void UpdateFromCmyk()
+    {
+        if (_internalUpdate) return;
+
+        _internalUpdate = true;
+        _cmykDriving = true;
+        try
+        {
+            double c = Math.Clamp(_cmykC, 0, 1);
+            double m = Math.Clamp(_cmykM, 0, 1);
+            double y = Math.Clamp(_cmykY, 0, 1);
+            double k = Math.Clamp(_cmykK, 0, 1);
+
+            double scale = 255.0 * (1.0 - k);
+            _r = Math.Clamp((int)Math.Round(scale * (1.0 - c)), 0, 255);
+            _g = Math.Clamp((int)Math.Round(scale * (1.0 - m)), 0, 255);
+            _b = Math.Clamp((int)Math.Round(scale * (1.0 - y)), 0, 255);
+
+            var color = Color.FromArgb(255, (byte)_r, (byte)_g, (byte)_b);
+            (_hue, _saturation, _value) = KeepUndefinedHsv(ColorMath.ToHsv(color));
+            UpdateDerived();
+            RaiseAll();
+        }
+        finally
+        {
+            _cmykDriving = false;
+            _internalUpdate = false;
+        }
+    }
+
     private void UpdateDerived()
     {
         // Поле Hex показывает альфу, только если цвет полупрозрачный
         _hex = FormatHex(AlphaByte, _r, _g, _b, AlphaByte < 255);
         _rgb565 = ((_r & 0xF8) << 8) | ((_g & 0xFC) << 3) | (_b >> 3);
         SyncOklchFromRgb();
+        SyncCmykFromRgb();
+        _cmyk = FormatCmyk();
     }
+
+    private void TryUpdateFromCmyk(string? text)
+    {
+        if (_internalUpdate || string.IsNullOrWhiteSpace(text)) return;
+
+        var body = text.Trim();
+        if (body.StartsWith("cmyk", StringComparison.OrdinalIgnoreCase))
+            body = body.Substring(4);
+        body = body.Trim().TrimStart('(').TrimEnd(')');
+
+        var parts = body.Split(new[] { ' ', ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length != 4) return;
+
+        var vals = new double[4];
+        for (int i = 0; i < 4; i++)
+        {
+            if (!TryParseCmykPart(parts[i], out vals[i])) return;
+        }
+
+        _cmykC = Math.Clamp(vals[0], 0, 1);
+        _cmykM = Math.Clamp(vals[1], 0, 1);
+        _cmykY = Math.Clamp(vals[2], 0, 1);
+        _cmykK = Math.Clamp(vals[3], 0, 1);
+        UpdateFromCmyk();
+    }
+
+    private static bool TryParseCmykPart(string token, out double value)
+    {
+        token = token.Trim();
+        bool isPercent = token.EndsWith('%');
+        if (isPercent) token = token.Substring(0, token.Length - 1);
+        if (!double.TryParse(token, NumberStyles.Float, CultureInfo.InvariantCulture, out value))
+            return false;
+        if (isPercent) value /= 100.0;
+        return true;
+    }
+
+    private string FormatCmyk() => 
+        string.Format(CultureInfo.InvariantCulture, "{0:F0}%, {1:F0}%, {2:F0}%, {3:F0}%",
+            _cmykC * 100, _cmykM * 100, _cmykY * 100, _cmykK * 100);
 
     private void TryUpdateFromHex(string? text)
     {

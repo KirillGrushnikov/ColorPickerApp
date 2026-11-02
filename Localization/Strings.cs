@@ -127,8 +127,8 @@ internal static class Strings
         // --- OKLCH ---
         ["oklch_box_tip"] = ("Можно вставить значение из CSS. Enter - применить, Esc - отменить", "Paste a CSS value. Enter - apply, Esc - cancel"),
         ["oklch_ring_tip"] = (
-            "Тон (H): клик или перетаскивание по кругу, колесо мыши - по 1°, с Shift - по 10°",
-            "Hue (H): click or drag on the ring, mouse wheel - 1°, with Shift - 10°"),
+            "Тон (H): клик или перетаскивание по кругу;\nколесо мыши - по 1°, с Shift - по 10°",
+            "Hue (H): click or drag on the ring;\nmouse wheel - 1°, with Shift - 10°"),
         ["oklch_l"] = ("L  светлота, %", "L  lightness, %"),
         ["oklch_c"] = ("C  хрома", "C  chroma"),
         ["oklch_h"] = ("H  тон, °", "H  hue, °"),
@@ -202,11 +202,13 @@ internal static class Strings
 
         // --- История ---
         ["history_hint"] = (
-            "Цвета из пипетки и скопированные. ЛКМ - применить, ПКМ - удалить.",
-            "Colors from the eyedropper and copied ones. Left click - apply, right click - remove."),
+            "Цвета из пипетки и скопированные.\nЛКМ - применить, ПКМ - удалить,\nСКМ - редактировать подсказку",
+            "Colors from the eyedropper and copied ones.\nLeft click - apply, right click - remove,\nmiddle click - edit tooltip"),
         ["history_clear"] = ("Очистить", "Clear"),
         ["history_empty"] = ("История пока пуста.", "No colors yet."),
         ["history_alpha"] = ("{0}, альфа {1:0.00}", "{0}, alpha {1:0.00}"),
+        ["history_note_watermark"] = ("Подпись к цвету…", "Caption for color…"),
+        ["history_note_ok"] = ("Подтвердить", "Confirm"),
 
         // --- Пипетка ---
         ["eyedropper_hint"] = (

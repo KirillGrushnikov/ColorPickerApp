@@ -17,6 +17,7 @@ using System.Globalization;
 using Avalonia.Layout;
 using Avalonia.LogicalTree;
 using System.Threading.Tasks;
+using Avalonia.Controls.Primitives;
 
 namespace ColorPickerApp.Views;
 
@@ -215,12 +216,17 @@ public partial class MainWindow : Window
 
     private void StepHarmonyMode(int delta)
     {
+        var length = HarmonyModes.Length;
+        if (length == 0) return;
+
         var index = Array.FindIndex(HarmonyModes, m => m.Mode == Wheel.HarmonyMode);
-        var next = Math.Clamp(index + delta, 0, HarmonyModes.Length - 1);
+        if (index < 0) index = 0; // на случай, если текущий режим не найден
+
+        var next = ((index + delta) % length + length) % length;
         if (next == index)
             return;
 
-        Wheel.HarmonyMode = HarmonyModes[next].Mode; // свотчи обновит Wheel_PropertyChanged
+        Wheel.HarmonyMode = HarmonyModes[next].Mode;
         ColorModeLabel.Content = HarmonyModes[next].Title;
     }
 
@@ -284,7 +290,7 @@ public partial class MainWindow : Window
         Vm.CopyFormat = (item?.Content?.ToString() ?? "rgb").ToLowerInvariant();
         latticeToggleButton.Content = (Vm.CopyFormat == "hex" ? '#' : 'ƒ');
         latticeToggleButton.IsEnabled = Vm.CopyFormat != "rgb-565";
-        switchWithAlpha.IsEnabled = Vm.CopyFormat != "rgb-565";
+        switchWithAlpha.IsEnabled = (Vm.CopyFormat != "rgb-565" && Vm.CopyFormat != "cmyk");
         RefreshCopyText();
     }
 
@@ -685,18 +691,23 @@ public partial class MainWindow : Window
                 continue;
 
             var index = i;
+            var hexKey = colors[i];
             var (button, fill) = CreateSwatchButton(34, new Thickness(0, 0, 6, 6), 34);
             fill.Background = new ImmutableSolidColorBrush(color);
-            ToolTip.SetTip(button, color.A == 255
-                ? ColorFormat.Hex(color)
-                : Loc.F("history_alpha", ColorFormat.Hex(color), color.A / 255.0));
+            UpdateHistoryTooltip(button, color, hexKey);
 
             button.Click += (_, _) => Vm?.SetColor(color);
             button.PointerPressed += (_, e) =>
             {
-                if (e.GetCurrentPoint(this).Properties.IsRightButtonPressed)
+                var props = e.GetCurrentPoint(this).Properties;
+                if (props.IsRightButtonPressed)
                 {
                     App.Settings.RemoveRecentColor(index);
+                    e.Handled = true;
+                }
+                else if (props.IsMiddleButtonPressed)
+                {
+                    ShowHistoryNoteFlyout(button, color, hexKey);
                     e.Handled = true;
                 }
             };
@@ -704,6 +715,96 @@ public partial class MainWindow : Window
         }
 
         HistoryEmptyText.IsVisible = HistoryPanel.Children.Count == 0;
+    }
+
+    private void UpdateHistoryTooltip(Button button, Color color, string hexKey)
+    {
+        var baseTip = color.A == 255
+            ? ColorFormat.Hex(color)
+            : Loc.F("history_alpha", ColorFormat.Hex(color), color.A / 255.0);
+
+        var note = App.Settings.GetRecentColorNote(hexKey);
+        ToolTip.SetTip(button, string.IsNullOrWhiteSpace(note)
+            ? baseTip
+            : $"{note}\n{baseTip}");
+    }
+
+    private void ShowHistoryNoteFlyout(Button anchor, Color color, string hexKey)
+    {
+        var textBox = new TextBox
+        {
+            Text = App.Settings.GetRecentColorNote(hexKey),
+            Watermark = Loc.T("history_note_watermark"),
+            Width = 240,
+        };
+
+        var miniColor = new Border
+        {
+            Background = new SolidColorBrush(color),
+            BorderThickness = new Thickness(2),
+            CornerRadius = new CornerRadius(6),
+            BorderBrush = SwatchBorderBrush,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Height = 30
+        };
+
+        var okButton = new Button
+        {
+            Content = Loc.T("history_note_ok"),
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Padding = new Thickness(12, 6),
+        };
+
+        var bottomGrid = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("*,*"),
+            Children = { miniColor, okButton },
+            ColumnSpacing = 10,
+        };
+
+        Grid.SetColumn(miniColor, 0);
+        Grid.SetColumn(okButton, 1);
+
+        var panel = new StackPanel
+        {
+            Spacing = 8,
+            Margin = new Thickness(12),
+            Children = { textBox, bottomGrid },
+        };
+
+        var flyout = new Flyout
+        {
+            Content = panel,
+            Placement = PlacementMode.Bottom,
+            FlyoutPresenterTheme = (ControlTheme)this.FindResource("PanelFlyoutPresenter")!,
+        };
+        
+
+        void Commit()
+        {
+            var note = textBox.Text ?? string.Empty;
+            if (note != App.Settings.GetRecentColorNote(hexKey))
+            {
+                App.Settings.SetRecentColorNote(hexKey, note);
+                App.Settings.Save();
+            }
+            flyout.Hide();
+            UpdateHistoryTooltip(anchor, color, hexKey);
+        }
+
+        textBox.KeyDown += (_, e) =>
+        {
+            if (e.Key == Key.Enter) { Commit(); e.Handled = true; }
+            else if (e.Key == Key.Escape) { flyout.Hide(); e.Handled = true; }
+        };
+        okButton.Click += (_, _) => Commit();
+
+        flyout.Opened += (_, _) =>
+        {
+            textBox.Focus();
+            textBox.SelectAll();
+        };
+        flyout.ShowAt(anchor);
     }
 
     private void OnClearHistoryClick(object? sender, RoutedEventArgs e) => App.Settings.ClearRecentColors();
@@ -1040,6 +1141,36 @@ public partial class MainWindow : Window
     private Animation? _showSplitViewAnimation;
     private Animation? _hideSplitViewAnimation;
 
+    private bool _startupHold;
+    private bool _startupFirst = true;
+
+    protected override void OnOpened(EventArgs e)
+    {
+        base.OnOpened(e);
+        if (_startupFirst)
+        {
+            RunStartupShowcase();
+            _startupFirst = false;
+        }
+    }
+
+    /// <summary>
+    /// При старте держим полоску настроек выдвинутой (Margin = 0) 3 секунды,
+    /// чтобы кнопку-стрелку было видно и понятно, откуда открывать настройки.
+    /// Саму панель при этом не открываем.
+    /// </summary>
+    private async void RunStartupShowcase()
+    {
+        _startupHold = true;
+        SplitViewControl.Margin = new Thickness(0);
+        _splitViewIsHidden = false;
+
+        await Task.Delay(3000);
+
+        _startupHold = false;
+        CheckMouse();
+    }
+
     // Панель настроек создаётся только когда пользователь к ней тянется:
     // при наведении на край окна или по клику на кнопку
     private void EnsureSettingsView()
@@ -1102,6 +1233,7 @@ public partial class MainWindow : Window
 
     public async void HideSplitView()
     {
+        if (_startupHold) return;
         if (_splitViewIsHidden || _splitViewAnimationRunning) return;
 
         _hideSplitViewAnimation ??= CreateMarginAnimation(new Thickness(0), new Thickness(-20, 0, 0, 0));

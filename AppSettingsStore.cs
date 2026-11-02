@@ -206,6 +206,19 @@ public sealed class AppSettingsStore : INotifyPropertyChanged
     /// <summary>История изменилась (вызывается в UI-потоке).</summary>
     public event Action? RecentColorsChanged;
 
+    public Dictionary<string, string> RecentColorNotes { get; set; } = new();
+
+    public string GetRecentColorNote(string hex)
+        => RecentColorNotes.TryGetValue(hex, out var note) ? note : string.Empty;
+
+    public void SetRecentColorNote(string hex, string? note)
+    {
+        if (string.IsNullOrWhiteSpace(note))
+            RecentColorNotes.Remove(hex);
+        else
+            RecentColorNotes[hex] = note!;
+    }
+
     public void AddRecentColor(Color color)
     {
         var hex = $"#{color.A:x2}{color.R:x2}{color.G:x2}{color.B:x2}";
@@ -235,6 +248,7 @@ public sealed class AppSettingsStore : INotifyPropertyChanged
         if (RecentColors.Count == 0)
             return;
         RecentColors.Clear();
+        RecentColorNotes.Clear();
         Save();
         RecentColorsChanged?.Invoke();
     }

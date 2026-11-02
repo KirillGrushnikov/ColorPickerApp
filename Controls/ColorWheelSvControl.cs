@@ -40,12 +40,13 @@ public class ColorWheelSvControl : Control
     private bool _dragHue;
     private bool _dragSv;
     private bool _draggingMarker;
+    private double _dragHueOffset;
+
     private enum MarkerType { AnglePositive, AngleNegative, OppositeAngle }
     private MarkerType _draggedMarkerType;
     private double _initialHarmonyAngle;
 
     // Кольцо оттенков рендерится один раз в битмап и пересоздаётся только при смене размера/масштаба.
-    // Раньше на каждый кадр (каждое движение мыши) рисовалось 720 линий с новыми Pen и Brush.
     private WriteableBitmap? _hueRingBitmap;
     private PixelSize _hueRingPixelSize;
     private double _hueRingScaling;
@@ -58,6 +59,9 @@ public class ColorWheelSvControl : Control
     private static readonly IPen WhiteMarkerPen = new ImmutablePen(Brushes.White, 2);
     private static readonly IPen FixedMarkerPen = new ImmutablePen(new ImmutableSolidColorBrush(Color.FromRgb(70, 70, 70)), 2);
     private static readonly IPen SvBorderPen = new ImmutablePen(new ImmutableSolidColorBrush(Color.FromArgb(70, 255, 255, 255)), 1);
+
+    private static readonly Cursor HandCursor = new(StandardCursorType.Hand);
+    private static readonly Cursor ArrowCursor = new(StandardCursorType.Arrow);
 
     private static readonly IBrush SvWhiteGradient = new LinearGradientBrush
     {
@@ -80,6 +84,27 @@ public class ColorWheelSvControl : Control
             new(Colors.Black, 1),
         },
     };
+
+    private static readonly Rect EmptyRect = new(0, 0, 0, 0);
+    private const double RingThickness = 20.0;
+    private const double MarkerOffset = 8.0;
+    private const double MarkerHitTolerance = 8.0;
+
+    private readonly struct WheelLayout
+    {
+        public readonly Point Center;
+        public readonly double OuterRadius;
+        public readonly double InnerRadius;
+        public readonly Rect SquareRect;
+
+        public WheelLayout(Point center, double outerRadius, double innerRadius, Rect squareRect)
+        {
+            Center = center;
+            OuterRadius = outerRadius;
+            InnerRadius = innerRadius;
+            SquareRect = squareRect;
+        }
+    }
 
     static ColorWheelSvControl()
     {
@@ -121,28 +146,32 @@ public class ColorWheelSvControl : Control
         return Math.Clamp(value, 5, 90);
     }
 
+    private WheelLayout GetLayout()
+    {
+        var bounds = new Rect(Bounds.Size);
+        var center = bounds.Center;
+        var outerRadius = Math.Min(bounds.Width, bounds.Height) * 0.5 - 20;
+        var innerRadius = outerRadius - RingThickness;
+        var squareHalf = innerRadius * 0.68;
+        var squareRect = new Rect(center.X - squareHalf, center.Y - squareHalf, squareHalf * 2, squareHalf * 2);
+        return new WheelLayout(center, outerRadius, innerRadius, squareRect);
+    }
+
     public override void Render(DrawingContext context)
     {
         base.Render(context);
 
-        var bounds = new Rect(Bounds.Size);
-        var center = bounds.Center;
-        var outerRadius = Math.Min(bounds.Width, bounds.Height) * 0.5 - 20;
-        var ringThickness = 20.0;
-        var innerRadius = outerRadius - ringThickness;
+        var layout = GetLayout();
 
-        DrawHueRing(context, center, outerRadius, ringThickness);
+        DrawHueRing(context, layout.Center, layout.OuterRadius, RingThickness);
+        DrawSvSquare(context, layout.SquareRect);
 
-        var squareHalf = innerRadius * 0.68;
-        var squareRect = new Rect(center.X - squareHalf, center.Y - squareHalf, squareHalf * 2, squareHalf * 2);
-        DrawSvSquare(context, squareRect);
-
-        DrawHueMarker(context, center, outerRadius, Hue, isPrimary: true, isMovable: false);
-        DrawHarmonyMarkers(context, center, outerRadius);
+        DrawHueMarker(context, layout.Center, layout.OuterRadius, Hue, isPrimary: true, isMovable: false);
+        DrawHarmonyMarkers(context, layout.Center, layout.OuterRadius);
 
         var svPoint = new Point(
-            squareRect.Left + Saturation * squareRect.Width,
-            squareRect.Top + (1 - Value) * squareRect.Height);
+            layout.SquareRect.Left + Saturation * layout.SquareRect.Width,
+            layout.SquareRect.Top + (1 - Value) * layout.SquareRect.Height);
         context.DrawEllipse(SvPointFill, SvPointPen, svPoint, 6, 6);
     }
 
@@ -173,6 +202,7 @@ public class ColorWheelSvControl : Control
                 break;
         }
     }
+
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
@@ -189,23 +219,35 @@ public class ColorWheelSvControl : Control
                 e.Handled = true;
                 return;
             }
+
+            _dragHue = true;
+            _dragHueOffset = NormalizeAngle(markerHue - Hue);
+            e.Pointer.Capture(this);
+            e.Handled = true;
             return;
         }
 
         e.Pointer.Capture(this);
         UpdateFromPoint(point, true);
+        UpdateCursor(point);
     }
 
     protected override void OnPointerMoved(PointerEventArgs e)
     {
         base.OnPointerMoved(e);
+        var point = e.GetPosition(this);
+
         if (_draggingMarker)
         {
-            UpdateMarkerDrag(e.GetPosition(this));
+            UpdateMarkerDrag(point);
         }
         else if (_dragHue || _dragSv)
         {
-            UpdateFromPoint(e.GetPosition(this), false);
+            UpdateFromPoint(point, false);
+        }
+        else
+        {
+            UpdateCursor(point);
         }
     }
 
@@ -230,8 +272,56 @@ public class ColorWheelSvControl : Control
         _draggingMarker = false;
         _dragHue = false;
         _dragSv = false;
+        _dragHueOffset = 0;
         e.Pointer.Capture(null);
+        UpdateCursor(e.GetPosition(this));
     }
+
+    protected override void OnPointerEntered(PointerEventArgs e)
+    {
+        base.OnPointerEntered(e);
+        UpdateCursor(e.GetPosition(this));
+    }
+
+    protected override void OnPointerExited(PointerEventArgs e)
+    {
+        base.OnPointerExited(e);
+        if (!_draggingMarker && !_dragHue && !_dragSv)
+            Cursor = ArrowCursor;
+    }
+
+    // ------------------------------------------------------------------
+    //  Курсор: "рука" над кольцом, квадратом SV и любым маркером
+    // ------------------------------------------------------------------
+
+    private void UpdateCursor(Point point)
+    {
+        var target = IsPointOverInteractiveArea(point) ? HandCursor : ArrowCursor;
+        if (!ReferenceEquals(Cursor, target))
+            Cursor = target;
+    }
+
+    private bool IsPointOverInteractiveArea(Point point)
+    {
+        if (HitTestMarkers(point, out _, out _, out _))
+            return true;
+
+        var layout = GetLayout();
+        var dx = point.X - layout.Center.X;
+        var dy = point.Y - layout.Center.Y;
+        var dist = Math.Sqrt(dx * dx + dy * dy);
+
+        if (dist <= layout.OuterRadius && dist >= layout.InnerRadius)
+            return true;
+        if (layout.SquareRect.Contains(point))
+            return true;
+
+        return false;
+    }
+
+    // ------------------------------------------------------------------
+    //  Перетаскивание гармонических маркеров (HarmonyAngle)
+    // ------------------------------------------------------------------
 
     private MarkerType GetMarkerType(double markerHue)
     {
@@ -241,29 +331,25 @@ public class ColorWheelSvControl : Control
         switch (HarmonyMode)
         {
             case ColorHarmonyMode.Analogous:
-                // Маркеры: base+angle и base-angle
                 if (Math.Abs(NormalizeAngle(markerHue - baseHue) - angle) < 1)
                     return MarkerType.AnglePositive;
                 else
                     return MarkerType.AngleNegative;
 
             case ColorHarmonyMode.AnalogousAccent:
-                // Маркеры: base+angle и base-angle (base+180 неподвижный)
                 if (Math.Abs(NormalizeAngle(markerHue - baseHue) - angle) < 1)
                     return MarkerType.AnglePositive;
                 else
                     return MarkerType.AngleNegative;
 
             case ColorHarmonyMode.Triad:
-                // Маркеры: base+180+angle и base+180-angle
                 double offset = NormalizeAngle(markerHue - baseHue);
                 if (Math.Abs(offset - (180 + angle)) < 1 || Math.Abs(offset - (180 + angle - 360)) < 1)
-                    return MarkerType.AnglePositive; // соответствует 180+angle
+                    return MarkerType.AnglePositive;
                 else
-                    return MarkerType.AngleNegative; // соответствует 180-angle
+                    return MarkerType.AngleNegative;
 
             case ColorHarmonyMode.Tetrad:
-                // Маркеры: base+angle (AnglePositive) и base+180+angle (OppositeAngle)
                 offset = NormalizeAngle(markerHue - baseHue);
                 if (Math.Abs(offset - angle) < 1)
                     return MarkerType.AnglePositive;
@@ -284,11 +370,10 @@ public class ColorWheelSvControl : Control
 
     private void UpdateMarkerDrag(Point point)
     {
-        var bounds = new Rect(Bounds.Size);
-        var center = bounds.Center;
+        var layout = GetLayout();
 
-        var dx = point.X - center.X;
-        var dy = point.Y - center.Y;
+        var dx = point.X - layout.Center.X;
+        var dy = point.Y - layout.Center.Y;
         var markerHue = Math.Atan2(dy, dx) * 180 / Math.PI + 90;
         if (markerHue < 0) markerHue += 360;
 
@@ -308,10 +393,8 @@ public class ColorWheelSvControl : Control
 
             case ColorHarmonyMode.Triad:
                 if (_draggedMarkerType == MarkerType.AnglePositive)
-                    // Маркер на base+180+angle -> angle = offset - 180
                     newAngle = offset - 180;
                 else
-                    // Маркер на base+180-angle -> angle = 180 - offset
                     newAngle = 180 - offset;
                 newAngle = Math.Clamp(newAngle, 5, 90);
                 break;
@@ -331,21 +414,19 @@ public class ColorWheelSvControl : Control
         InvalidateVisual();
     }
 
+    // ------------------------------------------------------------------
+    //  Ввод координат (Hue / Saturation / Value)
+    // ------------------------------------------------------------------
+
     private void UpdateFromPoint(Point point, bool pickDragTarget)
     {
-        var bounds = new Rect(Bounds.Size);
-        var center = bounds.Center;
-        var outerRadius = Math.Min(bounds.Width, bounds.Height) * 0.5 - 20;
-        var ringThickness = 20.0;
-        var innerRadius = outerRadius - ringThickness;
-        var squareHalf = innerRadius * 0.68;
-        var squareRect = new Rect(center.X - squareHalf, center.Y - squareHalf, squareHalf * 2, squareHalf * 2);
+        var layout = GetLayout();
 
-        var dx = point.X - center.X;
-        var dy = point.Y - center.Y;
+        var dx = point.X - layout.Center.X;
+        var dy = point.Y - layout.Center.Y;
         var dist = Math.Sqrt(dx * dx + dy * dy);
-        var isInRing = dist <= outerRadius && dist >= innerRadius;
-        var isInSquare = squareRect.Contains(point);
+        var isInRing = dist <= layout.OuterRadius && dist >= layout.InnerRadius;
+        var isInSquare = layout.SquareRect.Contains(point);
 
         if (pickDragTarget)
         {
@@ -358,18 +439,22 @@ public class ColorWheelSvControl : Control
             var angle = Math.Atan2(dy, dx) * 180 / Math.PI + 90;
             if (angle < 0)
                 angle += 360;
-            Hue = angle;
+            Hue = NormalizeAngle(angle - _dragHueOffset);
             InvalidateVisual();
         }
         else if (_dragSv)
         {
-            var s = (point.X - squareRect.Left) / squareRect.Width;
-            var v = 1 - (point.Y - squareRect.Top) / squareRect.Height;
+            var s = (point.X - layout.SquareRect.Left) / layout.SquareRect.Width;
+            var v = 1 - (point.Y - layout.SquareRect.Top) / layout.SquareRect.Height;
             Saturation = ColorMath.Clamp01(s);
             Value = ColorMath.Clamp01(v);
             InvalidateVisual();
         }
     }
+
+    // ------------------------------------------------------------------
+    //  Hit-testing маркеров
+    // ------------------------------------------------------------------
 
     private bool HitTestMarkers(Point point, out bool isPrimary, out double markerHue, out bool isMovable)
     {
@@ -377,32 +462,50 @@ public class ColorWheelSvControl : Control
         markerHue = 0;
         isMovable = false;
 
-        var bounds = new Rect(Bounds.Size);
-        var center = bounds.Center;
-        var outerRadius = Math.Min(bounds.Width, bounds.Height) * 0.5 - 20;
-        const double hitTolerance = 8;
+        var layout = GetLayout();
 
-        var harmonyHues = GetHarmonyHues(Hue, HarmonyMode, HarmonyAngle);
-        foreach (var h in harmonyHues)
+        // 1) Основной маркер текущего оттенка (всегда видим, всегда кликабелен/перетаскиваем).
         {
-            bool primary = Math.Abs(h - Hue) < 0.1;
-            bool movable = IsMarkerMovable(primary, h);
+            var radians = (Hue - 90) * Math.PI / 180.0;
+            var markerPos = new Point(
+                layout.Center.X + Math.Cos(radians) * (layout.OuterRadius + MarkerOffset),
+                layout.Center.Y + Math.Sin(radians) * (layout.OuterRadius + MarkerOffset));
+
+            var tol = MarkerHitTolerance + 4;
+            if (Math.Abs(point.X - markerPos.X) <= tol && Math.Abs(point.Y - markerPos.Y) <= tol)
+            {
+                isPrimary = true;
+                markerHue = Hue;
+                isMovable = false;
+                return true;
+            }
+        }
+
+        // 2) Прочие маркеры гармонии.
+        foreach (var h in GetHarmonyHues(Hue, HarmonyMode, HarmonyAngle))
+        {
+            if (Math.Abs(h - Hue) < 0.1)
+                continue;
+
+            bool movable = IsMarkerMovable(false, h);
             double markerRadius = movable ? 6 : 4;
-            double actualHitTolerance = hitTolerance + markerRadius;
+            double actualHitTolerance = MarkerHitTolerance + markerRadius;
 
             var radians = (h - 90) * Math.PI / 180.0;
             var markerPos = new Point(
-                center.X + Math.Cos(radians) * (outerRadius + 8),
-                center.Y + Math.Sin(radians) * (outerRadius + 8));
+                layout.Center.X + Math.Cos(radians) * (layout.OuterRadius + MarkerOffset),
+                layout.Center.Y + Math.Sin(radians) * (layout.OuterRadius + MarkerOffset));
 
-            if (Math.Abs(point.X - markerPos.X) <= actualHitTolerance && Math.Abs(point.Y - markerPos.Y) <= actualHitTolerance)
+            if (Math.Abs(point.X - markerPos.X) <= actualHitTolerance &&
+                Math.Abs(point.Y - markerPos.Y) <= actualHitTolerance)
             {
                 markerHue = h;
-                isPrimary = primary;
+                isPrimary = false;
                 isMovable = movable;
                 return true;
             }
         }
+
         return false;
     }
 
@@ -431,6 +534,10 @@ public class ColorWheelSvControl : Control
                 return true;
         }
     }
+
+    // ------------------------------------------------------------------
+    //  Отрисовка
+    // ------------------------------------------------------------------
 
     private void DrawHueRing(DrawingContext context, Point center, double outerRadius, double thickness)
     {
@@ -471,7 +578,6 @@ public class ColorWheelSvControl : Control
                 var dx = x + 0.5 - cx;
                 var distance = Math.Sqrt(dx * dx + dy * dy);
 
-                // Сглаживание краёв кольца: доля покрытия пикселя
                 var coverage = Math.Clamp(outer - distance + 0.5, 0, 1) * Math.Clamp(distance - inner + 0.5, 0, 1);
                 if (coverage <= 0)
                 {
@@ -479,12 +585,10 @@ public class ColorWheelSvControl : Control
                     continue;
                 }
 
-                // Та же формула угла, что и в UpdateFromPoint: 0° сверху, по часовой стрелке
                 var hue = Math.Atan2(dy, dx) * 180 / Math.PI + 90;
                 if (hue < 0) hue += 360;
                 var color = ColorMath.FromHsv(hue, 1, 1);
 
-                // Премультиплицированный BGRA
                 var a = (uint)Math.Round(coverage * 255);
                 var r = color.R * a / 255;
                 var g = color.G * a / 255;
@@ -499,7 +603,7 @@ public class ColorWheelSvControl : Control
     private void DrawHueMarker(DrawingContext context, Point center, double outerRadius, double hue, bool isPrimary, bool isMovable)
     {
         var hueRadians = (hue - 90) * Math.PI / 180.0;
-        var markerRadiusOffset = outerRadius + 8;
+        var markerRadiusOffset = outerRadius + MarkerOffset;
         var point = new Point(
             center.X + Math.Cos(hueRadians) * markerRadiusOffset,
             center.Y + Math.Sin(hueRadians) * markerRadiusOffset);

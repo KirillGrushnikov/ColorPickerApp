@@ -7,7 +7,7 @@
 ; 3. При необходимости добавьте license.txt, app.ico в папку со скриптом
 
 #define MyAppName      "Color Picker Pro"
-#define MyAppVersion   "3.0.0"
+#define MyAppVersion   "3.0.1"
 #define MyAppPublisher "NeffeX"
 #define MyAppExeName   "ColorPickerApp.exe"               ; имя exe-файла после публикации
 

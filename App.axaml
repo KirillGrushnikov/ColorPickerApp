@@ -29,6 +29,22 @@
   </Application.Resources>
 
   <Application.Styles>
+    <Style Selector="ScrollViewer">
+		<Setter Property="Background" Value="Transparent" />
+	</Style>
+    <Style Selector="ScrollViewer /template/ ScrollBar /template/ Thumb">
+		<Setter Property="Template">
+			<ControlTemplate>
+				<Border Background="{TemplateBinding Background}" CornerRadius="20" ClipToBounds="True"/>
+			</ControlTemplate>
+		</Setter>
+	</Style>
+    <Style Selector="ScrollViewer /template/ ScrollBar:vertical /template/ Rectangle#TrackRect">
+		<Setter Property="Fill" Value="Transparent"/>
+	</Style>
+	<Style Selector="ScrollViewer /template/ ScrollBar:horizontal /template/ Rectangle#TrackRect">
+		<Setter Property="Fill" Value="Transparent"/>
+	</Style>
     <FluentTheme />
   </Application.Styles>
 </Application>
