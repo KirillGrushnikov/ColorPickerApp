@@ -1168,7 +1168,8 @@ public partial class MainWindow : Window
         await Task.Delay(3000);
 
         _startupHold = false;
-        CheckMouse();
+        if (!SplitViewControl.IsPaneOpen)
+            CheckMouse();
     }
 
     // Панель настроек создаётся только когда пользователь к ней тянется:
